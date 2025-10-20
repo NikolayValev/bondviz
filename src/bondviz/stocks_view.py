@@ -28,7 +28,7 @@ def _cached_aggs(ticker: str, start: date, end: date, multiplier: int, timespan:
 
 def render_polygon_stocks():
     st.header("Stocks (Polygon.io)")
-    with st.form("polygon_form"):
+    with st.sidebar.form("polygon_form"):
         tickers_csv = st.text_input("Tickers (comma-separated)", value="AAPL, MSFT, GOOGL")
 
         c3, c4, c5, c6 = st.columns(4)

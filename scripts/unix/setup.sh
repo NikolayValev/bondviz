@@ -5,4 +5,4 @@ python -m venv .venv
 . .venv/bin/activate
 pip install -U pip setuptools wheel
 pip install -e .
-pip install streamlit matplotlib pandas requests python-dotenv pandas-datareader polygon-api-client
+pip install streamlit matplotlib pandas requests python-dotenv pandas-datareader polygon-api-client streamlit-option-menu scikit-learn

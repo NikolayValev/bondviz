@@ -1,38 +1,58 @@
 import streamlit as st
-from bondviz.app_logic import get_latest_treasury_table, compute_pv
+try:
+    from streamlit_option_menu import option_menu as _option_menu  # type: ignore
+except Exception:
+    _option_menu = None
+from bondviz.app_logic import compute_pv
 from bondviz.visualizer import render_visualizer
 from bondviz.stocks_view import render_polygon_stocks
+from bondviz.pca_view import render_yield_pca
 
 st.set_page_config(page_title="BondViz", layout="wide")
-st.header("Treasury Yields + Bond PV (Continuous)")
 
-try:
-    latest, date, df = get_latest_treasury_table()
-    st.subheader(f"Treasury Par Curve — {date}")
-    st.dataframe(df, hide_index=True)
-except Exception as e:
-    st.error(f"Treasury data unavailable: {e}")
+# Header menu
+st.title("BondViz")
 
-st.subheader("Price a Plain-Vanilla Fixed Coupon Bond")
-with st.form("pv_form"):
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
+def nav_menu() -> str:
+    items = ["Treasury Yields", "Curve Calculations", "Stock Picker"]
+    if _option_menu is not None:
+        with st.container():
+            return _option_menu(
+                None,
+                items,
+                icons=["graph-up", "calculator", "bar-chart"],
+                menu_icon="cast",
+                default_index=0,
+                orientation="horizontal",
+            )
+    else:
+        # Fallback if streamlit-option-menu is not installed
+        return st.radio("Navigation", items, horizontal=True)
+
+page = nav_menu()
+
+if page == "Treasury Yields":
+    st.header("Treasury Yields")
+    render_visualizer()
+
+elif page == "Curve Calculations":
+    st.header("Curve Calculations")
+    with st.sidebar.form("pv_form"):
+        st.subheader("Price a Fixed Coupon Bond")
         F = st.number_input("Face", value=1000.0, step=100.0, key="pv_face")
-    with c2:
         c = st.number_input("Coupon rate", value=0.05, step=0.005, format="%.3f", key="pv_coupon")
-    with c3:
         y = st.number_input("Continuous yield", value=0.04, step=0.005, format="%.3f", key="pv_yield")
-    with c4:
         T = st.number_input("Years to maturity", value=10.0, step=1.0, key="pv_years")
-    submitted = st.form_submit_button("Calculate")
+        submitted = st.form_submit_button("Calculate")
 
-if submitted or "pv_result" not in st.session_state:
-    st.session_state["pv_result"] = compute_pv(F, c, y, T)
+    if submitted or "pv_result" not in st.session_state:
+        st.session_state["pv_result"] = compute_pv(F, c, y, T)
 
-st.metric("Present Value", f"{st.session_state['pv_result']:,.2f}")
+    st.metric("Present Value", f"{st.session_state['pv_result']:,.2f}")
 
-st.divider()
-render_visualizer()
+    st.divider()
+    render_yield_pca()
 
-st.divider()
-render_polygon_stocks()
+elif page == "Stock Picker":
+    st.header("Stock Picker")
+    render_polygon_stocks()

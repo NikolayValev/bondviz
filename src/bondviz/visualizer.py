@@ -222,6 +222,9 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
     st.subheader("Data Snapshot")
     st.dataframe(df.tail(10))
 
+    # Expose the currently loaded yield dataset to other pages (e.g., PCA)
+    st.session_state["yield_curve_df"] = df
+
     # Prepare latest and comparison curves
     latest_date = _latest_non_na_date(df)
     latest_curve = df.loc[latest_date].dropna()
