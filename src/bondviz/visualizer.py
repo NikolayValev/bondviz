@@ -175,19 +175,30 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
         """
     )
 
-    # Sidebar controls
+    # Sidebar controls (in a form to prevent constant reruns)
     with st.sidebar:
-        st.header("Data Source")
         source_options = ["bondviz API", "FRED API", "Upload CSV"] if USE_BONDVIZ else ["FRED API", "Upload CSV"]
-        source = st.radio("Choose input", options=source_options, index=0)
-
-        st.header("Date Range")
         default_start = date.today() - timedelta(days=365 * 5)
-        start = st.date_input("Start", default_start)
-        end = st.date_input("End", date.today())
+        with st.form("viz_controls"):
+            st.header("Data Source")
+            st.radio("Choose input", options=source_options, index=0, key="viz_source")
 
-        st.header("Smoothing")
-        smooth = st.checkbox("Apply 5-day rolling average", value=True)
+            st.header("Date Range")
+            st.date_input("Start", default_start, key="viz_start")
+            st.date_input("End", date.today(), key="viz_end")
+
+            st.header("Smoothing")
+            st.checkbox("Apply 5-day rolling average", value=True, key="viz_smooth")
+            submitted_controls = st.form_submit_button("Update Charts")
+
+        # Optional upload field (outside form is OK; upload itself triggers a rerun once)
+        uploaded = st.file_uploader("Upload CSV (Date + tenor columns)", type=["csv"], key="viz_csv")
+
+    # Resolve control values from session_state (stable until submit)
+    source = st.session_state.get("viz_source", source_options[0])
+    start = st.session_state.get("viz_start", default_start)
+    end = st.session_state.get("viz_end", date.today())
+    smooth = st.session_state.get("viz_smooth", True)
 
     # Load data per user choice
     if source == "bondviz API":
@@ -200,7 +211,6 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
         if df.empty:
             st.stop()
     else:
-        uploaded = st.sidebar.file_uploader("Upload CSV (Date + tenor columns)", type=["csv"])
         if not uploaded:
             st.info("Upload a CSV to continue.")
             st.stop()
@@ -287,50 +297,97 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
     fig4.colorbar(c, ax=ax4, label="%")
     st.pyplot(fig4)
 
-    # Optional: Zero and 1Y forward curves (illustrative)
-    st.subheader("(Optional) Zero Curve & 1Y Forward Curve – Simple Interp")
-    st.caption("Illustrative only; for pricing, use proper bootstrapping.")
+    # Bootstrapped zero and forward curves from par yields
+    st.subheader("Bootstrapped Zero Curve & 1Y Forward (semiannual)")
+    st.caption("Zeros bootstrapped from par yields (semiannual coupons); forwards from discount factors.")
 
-    def to_zero_rates_cc(yields_pct: pd.Series) -> pd.DataFrame:
-        y = (yields_pct / 100.0).dropna()
-        tenors = np.array([TENOR_YEARS[t] for t in y.index])
-        order = np.argsort(tenors)
-        tenors = tenors[order]
-        rates = y.values[order]
-        x = tenors
-        z = np.log(1 + rates)
-        xi = np.linspace(tenors.min(), tenors.max(), 200)
-        zi = np.interp(xi, x, z)
-        ri = np.expm1(zi)
-        return pd.DataFrame({"maturity": xi, "zero_rate": ri})
+    def bootstrap_zeros_from_par(par_yields_pct: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
+        """
+        Bootstrap discount factors and zero rates from par yields using semiannual coupons.
+        Returns (grid_times_years, zero_rates_annual, df_map) where df_map maps T->DF.
+        """
+        y = (par_yields_pct / 100.0).dropna()
+        if y.empty:
+            return np.array([]), np.array([]), {}
+        # Known par nodes (T in years, r in decimals)
+        known_T = np.array([TENOR_YEARS[t] for t in y.index])
+        known_r = y.values
+        order = np.argsort(known_T)
+        known_T = known_T[order]
+        known_r = known_r[order]
+
+        max_T = known_T.max()
+        # Build semiannual grid from 0.5Y up to max_T
+        f = 2  # semiannual
+        grid = np.arange(0.5, max_T + 1e-9, 0.5)
+        # Interpolate par yields onto the grid (flat extrapolation at ends)
+        r_grid = np.interp(grid, known_T, known_r)
+
+        D: dict[float, float] = {}
+        for T, r_par in zip(grid, r_grid):
+            n = int(round(T * f))
+            c = r_par / f
+            if n == 1:
+                # One coupon/payment: price 1 = (1+c)*D(T)
+                D[T] = 1.0 / (1.0 + c)
+            else:
+                # 1 = c*sum_{k=1..n-1} D(k/f) + (1+c) D(T)
+                s = 0.0
+                for k in range(1, n):
+                    Tk = k / f
+                    # Ensure previous DF exists (should by construction); if not, linearly interpolate
+                    if Tk in D:
+                        s += D[Tk]
+                    else:
+                        # Linear interpolation between nearest available nodes in D
+                        prev_keys = sorted([tt for tt in D.keys() if tt < Tk])
+                        next_keys = sorted([tt for tt in D.keys() if tt > Tk])
+                        if prev_keys and next_keys:
+                            t0 = prev_keys[-1]; t1 = next_keys[0]
+                            Dk = D[t0] + (D[t1] - D[t0]) * (Tk - t0) / (t1 - t0)
+                        elif prev_keys:
+                            Dk = D[prev_keys[-1]]
+                        elif next_keys:
+                            Dk = D[next_keys[0]]
+                        else:
+                            Dk = np.exp(-r_par * Tk)  # fallback
+                        s += Dk
+                D[T] = max(1e-9, (1.0 - c * s) / (1.0 + c))
+
+        # Convert DFs to annual-compounded zero rates: (1/D)^(1/T) - 1
+        zeros = np.array([(D[T] ** (-1.0 / T)) - 1.0 for T in grid])
+        return grid, zeros, D
 
     if not latest_curve.empty:
-        zero_df = to_zero_rates_cc(latest_curve)
-        fig5, ax5 = plt.subplots()
-        ax5.plot(zero_df["maturity"], zero_df["zero_rate"] * 100)
-        ax5.set_title(f"Approx Zero Curve – {latest_date.date()}")
-        ax5.set_xlabel("Maturity (years)")
-        ax5.set_ylabel("Zero Rate (%)")
-        ax5.grid(True, linestyle=":")
-        st.pyplot(fig5)
+        grid, zero_rates, Dmap = bootstrap_zeros_from_par(latest_curve)
+        if grid.size:
+            fig5, ax5 = plt.subplots()
+            ax5.plot(grid, zero_rates * 100)
+            ax5.set_title(f"Bootstrapped Zero Curve – {latest_date.date()}")
+            ax5.set_xlabel("Maturity (years)")
+            ax5.set_ylabel("Zero Rate (annual, %)")
+            ax5.grid(True, linestyle=":")
+            st.pyplot(fig5)
 
-        dt = 1.0
-        maturities = zero_df["maturity"].values
-        zeros = zero_df["zero_rate"].values
-        DF = 1.0 / np.power(1.0 + zeros, maturities)
-        valid = maturities <= (maturities.max() - dt)
-        t = maturities[valid]
-        DF_t = DF[valid]
-        DF_t1 = np.interp(t + dt, maturities, DF)
-        fwd_1y = (DF_t / DF_t1) - 1.0
-
-        fig6, ax6 = plt.subplots()
-        ax6.plot(t, fwd_1y * 100)
-        ax6.set_title("Approx 1Y Forward Rate Curve (from t to t+1)")
-        ax6.set_xlabel("Start (years)")
-        ax6.set_ylabel("Forward 1Y (%)")
-        ax6.grid(True, linestyle=":")
-        st.pyplot(fig6)
+            # 1Y forward starting at t: f(t,t+1) = D(t)/D(t+1) - 1 (annualized)
+            t_vals = []
+            fwd_vals = []
+            for T in grid:
+                T2 = T + 1.0
+                if any(abs(T2 - g) < 1e-9 for g in grid):
+                    # Use exact grid if present
+                    D_t = Dmap[T]
+                    D_t1 = Dmap[T2]
+                    fwd = (D_t / D_t1) - 1.0
+                    t_vals.append(T)
+                    fwd_vals.append(fwd)
+            if t_vals:
+                fig6, ax6 = plt.subplots()
+                ax6.plot(t_vals, np.array(fwd_vals) * 100)
+                ax6.set_title("Bootstrapped 1Y Forward Rate Curve (from t to t+1)")
+                ax6.set_xlabel("Start (years)")
+                ax6.set_ylabel("Forward 1Y (annual, %)")
+                ax6.grid(True, linestyle=":")
+                st.pyplot(fig6)
 
     st.success("Loaded via: " + ("bondviz API" if source == "bondviz API" else source))
-

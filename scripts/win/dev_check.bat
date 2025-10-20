@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d %~dp0\..
+cd /d %~dp0\..\..
 echo === Interpreter ===
 ".venv\Scripts\python.exe" -c "import sys,platform; print(platform.python_version()); print(sys.executable)"
 echo === bondviz import ===

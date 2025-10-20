@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d %~dp0\..
+cd /d %~dp0\..\..
 IF NOT EXIST ".venv\Scripts\python.exe" (
   echo Virtual environment missing. Run scripts\win\setup_venv.bat
   exit /b 1
