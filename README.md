@@ -11,7 +11,10 @@ BondViz provides:
 - Automated Treasury yield data from the U.S. Department of Treasury XML feed  
 - Continuous-compounding bond valuation model  
 - Matplotlib visualizations of yield curves and discount factors  
-- Streamlit dashboard for interactive exploration
+- Streamlit dashboard for interactive exploration  
+- Polygon.io stock data integration  
+- Yield-curve PCA explorer (scikit-learn)  
+- Optional pybind11 C++ extension for fast bond math
 
 ---
 
@@ -48,9 +51,19 @@ python -m venv .venv
 
 ```bash
 scripts\win\setup_venv.bat
-Usage
-Command-line tools
 ```
+
+### 2. Native extension (optional)
+
+The project ships with a pybind11-backed extension (`bondviz._native`) that accelerates bond pricing.
+
+- Windows: install Microsoft Build Tools (C++ workload) before running the setup script.  
+- macOS/Linux: ensure clang/gcc and headers are available (`xcode-select --install` or `build-essential`).  
+- Run `pip install -e .` (or the helper script) to compile automatically. If compilation fails, the app falls back to Python implementations.
+
+### Usage
+
+Command-line tools
 
 Fetch latest yield curve:
 

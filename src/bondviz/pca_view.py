@@ -126,7 +126,6 @@ def render_yield_pca():
         cols = list(X.columns)
         return factor_df, explained, components, cols
 
-    placeholder = st.empty()
     with st.status("Running PCA...", expanded=False) as status:
         # Execute cached PCA (fast on subsequent runs); show a status animation
         factor_df, explained, components, cols = _run_pca_cached(X, int(n_components))
