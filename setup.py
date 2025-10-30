@@ -9,6 +9,7 @@ ext_modules = [
         "bondviz._native",
         ["src/bondviz/_native.cpp"],
         cxx_std=17,
+        optional=True,
     )
 ]
 
@@ -17,4 +18,3 @@ setup(
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
 )
-

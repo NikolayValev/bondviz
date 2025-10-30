@@ -115,6 +115,48 @@ def render_yield_pca():
         st.error("Insufficient data after standardization.")
         return
 
+    # Lightweight formatters for narratives
+    def _fmt_pct(value: float | None, decimals: int = 1) -> str:
+        if value is None or np.isnan(value):
+            return "n/a"
+        return f"{value:.{decimals}f}%"
+
+    def _describe_loading(vec: np.ndarray) -> str:
+        if vec.size == 0 or np.isnan(vec).all():
+            return "mixed influence across the curve"
+        front = float(np.nanmean(vec[: max(1, vec.size // 3)]))
+        back = float(np.nanmean(vec[-max(1, vec.size // 3):]))
+        sign = np.sign(np.nanmean(vec))
+        if abs(front) < 1e-6 and abs(back) < 1e-6:
+            return "negligible loading across most maturities"
+        if sign >= 0:
+            if front > back:
+                return "heavier weight on the front end"
+            if back > front:
+                return "heavier weight on the long end"
+            return "mostly parallel impact across maturities"
+        else:
+            if front < back:
+                return "steepening move (front vs long signs differ)"
+            if back < front:
+                return "flattening move (long end opposite front)"
+            return "counter-parallel influence across maturities"
+
+    def _describe_factor_path(series: pd.Series) -> str:
+        if series.empty or series.dropna().empty:
+            return "insufficient history to gauge the trend"
+        recent = series.dropna().tail(min(60, len(series)))
+        change = float(recent.iloc[-1] - recent.iloc[0])
+        last = float(recent.iloc[-1])
+        if abs(change) < 0.25:
+            direction = "has been broadly stable"
+        elif change > 0:
+            direction = "has been trending higher"
+        else:
+            direction = "has been rolling over"
+        bias = "slightly positive" if last > 0.5 else "slightly negative" if last < -0.5 else "near neutral"
+        return f"{direction}; latest reading sits {bias}."
+
     @st.cache_data(show_spinner=False)
     def _run_pca_cached(X: pd.DataFrame, n: int) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, list]:
         pca = PCA(n_components=int(n))
@@ -131,6 +173,26 @@ def render_yield_pca():
         factor_df, explained, components, cols = _run_pca_cached(X, int(n_components))
         status.update(label="PCA complete", state="complete", expanded=False)
 
+    component_aliases = ["Level", "Slope", "Curvature", "Butterfly", "Residual"]
+    component_names: dict[str, str] = {}
+    highlight_lines: list[str] = []
+    for i in range(int(n_components)):
+        key = f"PC{i+1}"
+        alias = component_aliases[i] if i < len(component_aliases) else f"Factor {i+1}"
+        component_names[key] = alias
+        explained_i = float(explained[i]) if i < len(explained) else float("nan")
+        descriptor = _describe_loading(components[i]) if i < components.shape[0] else "no loading info"
+        highlight_lines.append(
+            f"- {alias} ({key}) captures {_fmt_pct(explained_i)} of the variance and shows {descriptor}."
+        )
+    total_pct = float(np.sum(explained[: int(n_components)])) if len(explained) else float("nan")
+    highlight_lines.append(
+        f"- Top {int(n_components)} components together explain {_fmt_pct(total_pct)} of the standardized yield-move variance."
+    )
+
+    st.markdown("### PCA Highlights")
+    st.markdown("\n".join(highlight_lines))
+
     st.write("Explained variance (%):", np.round(explained, 2))
 
     # Plot 1: Loadings
@@ -138,23 +200,38 @@ def render_yield_pca():
         import matplotlib.pyplot as plt  # type: ignore
         fig1, ax1 = plt.subplots(figsize=(8, 4))
         for i in range(int(n_components)):
-            ax1.plot(cols, components[i], marker="o", label=f"PC{i+1} ({explained[i]:.1f}%)")
-        ax1.set_title("PCA Loadings – Yield Curve Factors")
+            key = f"PC{i+1}"
+            label = component_names.get(key, key)
+            var_share = explained[i] if i < len(explained) else float("nan")
+            ax1.plot(cols, components[i], marker="o", label=f"{label} ({var_share:.1f}%)")
+        ax1.set_title("PCA Loadings - Yield Curve Factors")
         ax1.set_ylabel("Loading Weight")
         ax1.set_xlabel("Tenor")
         ax1.grid(True, linestyle=":", alpha=0.5)
         ax1.legend()
         st.pyplot(fig1)
+        loading_notes = []
+        for i in range(int(n_components)):
+            key = f"PC{i+1}"
+            alias = component_names.get(key, key)
+            loading_notes.append(f"{alias}: {_describe_loading(components[i])}.")
+        st.markdown("**Interpretation:** " + " ".join(loading_notes))
     except Exception as e:
         st.error(f"Failed to plot loadings: {e}")
 
     # Plot 2: Factor time series
     display_df = factor_df.rename(columns={
-        "PC1": "Level (PC1)",
-        "PC2": "Slope (PC2)",
-        "PC3": "Curvature (PC3)",
+        f"PC{i+1}": f"{component_names.get(f'PC{i+1}', f'PC{i+1}')} (PC{i+1})"
+        for i in range(int(n_components))
     })
     st.line_chart(display_df, height=320)
+    factor_notes = []
+    for i in range(min(3, int(n_components))):
+        key = f"PC{i+1}"
+        alias = component_names.get(key, key)
+        factor_notes.append(f"{alias} {_describe_factor_path(factor_df[key])}")
+    st.markdown("**Interpretation:** " + " ".join(factor_notes))
 
     with st.expander("Show factor values"):
         st.dataframe(factor_df, use_container_width=True)
+        st.caption("Factor realizations (z-scores) for each observation after de-meaning and scaling tenors.")
