@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,6 +39,68 @@ BC_TO_TENOR = {
     "BC_20YEAR": "20Y",
     "BC_30YEAR": "30Y",
 }
+
+PRINT_STYLE_SESSION_KEY = "_bondviz_print_css_loaded"
+PRINT_SECTION_CLASS = "bondviz-section"
+
+
+def _inject_print_styles() -> None:
+    if st.session_state.get(PRINT_STYLE_SESSION_KEY):
+        return
+    st.session_state[PRINT_STYLE_SESSION_KEY] = True
+    st.markdown(
+        f"""
+        <style>
+        .{PRINT_SECTION_CLASS} {{
+            border-radius: 10px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            background: #ffffff;
+        }}
+
+        @media print {{
+            body {{
+                color: #111;
+                background: #fff;
+            }}
+            header, footer,
+            [data-testid="stSidebar"],
+            [data-testid="stToolbar"] {{
+                display: none !important;
+            }}
+            .{PRINT_SECTION_CLASS} {{
+                break-inside: avoid;
+                page-break-inside: avoid;
+                padding: 0.35in 0.4in;
+                margin-bottom: 0.4in;
+                border: 1px solid #d4d4d4;
+                box-shadow: none;
+            }}
+            .{PRINT_SECTION_CLASS} h2,
+            .{PRINT_SECTION_CLASS} h3,
+            .{PRINT_SECTION_CLASS} h4,
+            .{PRINT_SECTION_CLASS} .stMarkdown {{
+                page-break-after: avoid;
+            }}
+            figure, img, canvas {{
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+@contextmanager
+def _print_section():
+    st.markdown(f'<div class="{PRINT_SECTION_CLASS}">', unsafe_allow_html=True)
+    try:
+        yield
+    finally:
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _lazy_import_pdr():  # pragma: no cover - optional dependency
@@ -161,6 +224,7 @@ def _nearest_date(target: pd.Timestamp, index: pd.DatetimeIndex) -> pd.Timestamp
 
 def render_visualizer():
     """Render the Treasury Yield Curve Visual Explorer inside the current Streamlit app."""
+    _inject_print_styles()
     st.title("US Treasury Yield Curve – Visual Explorer (bondviz-integrated)")
     st.markdown(
         """
@@ -169,10 +233,8 @@ This app is wired to your bondviz fetchers first, and falls back to FRED only if
 - Curve shifts vs 1M/3M/6M/1Y ago
 - Spreads: 2s10s and 3m10y
 - Heatmap of yields over time
-- Optional zero curve and 1Y forward (illustrative)
-
-Fix included: gracefully handles Date vs DATE to avoid KeyError.
-        """
+- Optional zero curve and 1Y forwards
+"""
     )
 
     # Sidebar controls (in a form to prevent constant reruns)
@@ -219,9 +281,12 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
     if smooth and len(df) > 5:
         df = df.rolling(5, min_periods=1).mean()
 
-    st.subheader("Data Snapshot")
-    st.dataframe(df.tail(10))
-    st.caption("Last ten observations after optional smoothing; confirm tenor coverage before reading the charts below.")
+    with _print_section():
+        st.subheader("Data Snapshot")
+        st.dataframe(df.tail(10))
+        st.caption(
+            "Last ten observations after optional smoothing; confirm tenor coverage before reading the charts below."
+        )
 
     # Expose the currently loaded yield dataset to other pages (e.g., PCA)
     st.session_state["yield_curve_df"] = df
@@ -317,242 +382,257 @@ Fix included: gracefully handles Date vs DATE to avoid KeyError.
             f"{_fmt_pp(yoy_delta_10y)} compared with one year ago."
         )
 
-    st.markdown("### Quick Conclusions")
-    st.markdown("\n".join(f"- {line}" for line in conclusion_bullets))
+    with _print_section():
+        st.markdown("### Quick Conclusions")
+        st.markdown("\n".join(f"- {line}" for line in conclusion_bullets))
 
     # Plot 1: Latest Yield Curve
-    st.subheader("Latest Yield Curve")
-    fig1, ax1 = plt.subplots()
-    mat = [TENOR_YEARS[t] for t in latest_curve.index]
-    ax1.plot(mat, latest_curve.values, marker="o")
-    ax1.set_xlabel("Maturity (years)")
-    ax1.set_ylabel("Yield (%)")
-    ax1.set_title(f"Yield Curve on {latest_date.date()}")
-    ax1.grid(True, which="both", linestyle=":")
-    st.pyplot(fig1)
-    latest_notes: list[str] = []
-    if front_label:
-        latest_notes.append(f"{front_label}: {_fmt_pct(front_value)}")
-    if long_label:
-        latest_notes.append(f"{long_label}: {_fmt_pct(long_value)}")
-    slope_note = (
-        f"Slope ({long_label}-{front_label}): {_fmt_pp(slope_pp)}."
-        if slope_pp is not None and front_label and long_label
-        else "Slope unavailable because one of the anchor tenors is missing."
-    )
-    st.markdown(
-        "**Interpretation:** "
-        + curve_shape_text
-        + (" " + " | ".join(latest_notes) if latest_notes else "")
-        + " "
-        + slope_note
-    )
-
-    # Plot 2: Curve Shifts vs Past
-    st.subheader("Curve Shifts vs Past Dates")
-    fig2, ax2 = plt.subplots()
-    ax2.plot([TENOR_YEARS[t] for t in latest_curve.index], latest_curve.values, marker="o", label=str(latest_date.date()))
-    for label, series in comp_curves.items():
-        ax2.plot([TENOR_YEARS[t] for t in series.index], series.values, marker="o", label=label)
-    ax2.set_xlabel("Maturity (years)")
-    ax2.set_ylabel("Yield (%)")
-    ax2.set_title("Yield Curve - Latest vs Past")
-    ax2.grid(True, which="both", linestyle=":")
-    ax2.legend()
-    st.pyplot(fig2)
-    shift_summary = " ".join(avg_shift_texts) if avg_shift_texts else "Historical curves are missing for this tenor set."
-    st.markdown(
-        "**Interpretation:** Compare the latest curve against past checkpoints to spot parallel shifts or twists. "
-        + shift_summary
-    )
-
-    # Plot 3: Spreads
-    st.subheader("Key Spreads")
-    needed = ["2Y", "10Y", "3M"]
-    missing = [c for c in needed if c not in df.columns]
-    if missing:
-        st.info("Spreads require 3M, 2Y, and 10Y to be present.")
-    else:
-        spreads = pd.DataFrame(index=df.index)
-        spreads["2s10s"] = df["10Y"] - df["2Y"]
-        spreads["3m10y"] = df["10Y"] - df["3M"]
-
-        fig3, ax3 = plt.subplots()
-        ax3.plot(spreads.index, spreads["2s10s"] * 100, label="2s10s")
-        ax3.plot(spreads.index, spreads["3m10y"] * 100, label="3m10y")
-        ax3.axhline(0, linestyle=":")
-        ax3.set_title("Spreads Over Time")
-        ax3.set_ylabel("Spread (bps)")
-        ax3.grid(True, which="both", linestyle=":")
-        ax3.legend()
-        st.pyplot(fig3)
-        last_spreads = spreads.iloc[-1]
-        two_ten_val = last_spreads.get("2s10s")
-        three_ten_val = last_spreads.get("3m10y")
-        if two_ten_val is not None and not pd.isna(two_ten_val):
-            two_ten_comment = "curve is inverted between 2Y and 10Y" if two_ten_val < 0 else "curve is upward sloping between 2Y and 10Y"
-            two_ten_text = f"2s10s: {_fmt_bps(float(two_ten_val))} ({two_ten_comment})."
-        else:
-            two_ten_text = "2s10s spread unavailable."
-        if three_ten_val is not None and not pd.isna(three_ten_val):
-            three_ten_comment = "front-end pressure persists" if three_ten_val < 0 else "front-end yields sit below the 10Y point"
-            three_ten_text = f"3m10y: {_fmt_bps(float(three_ten_val))} ({three_ten_comment})."
-        else:
-            three_ten_text = "3m10y spread unavailable."
+    with _print_section():
+        st.subheader("Latest Yield Curve")
+        fig1, ax1 = plt.subplots()
+        mat = [TENOR_YEARS[t] for t in latest_curve.index]
+        ax1.plot(mat, latest_curve.values, marker="o")
+        ax1.set_xlabel("Maturity (years)")
+        ax1.set_ylabel("Yield (%)")
+        ax1.set_title(f"Yield Curve on {latest_date.date()}")
+        ax1.grid(True, which="both", linestyle=":")
+        st.pyplot(fig1)
+        latest_notes: list[str] = []
+        if front_label:
+            latest_notes.append(f"{front_label}: {_fmt_pct(front_value)}")
+        if long_label:
+            latest_notes.append(f"{long_label}: {_fmt_pct(long_value)}")
+        slope_note = (
+            f"Slope ({long_label}-{front_label}): {_fmt_pp(slope_pp)}."
+            if slope_pp is not None and front_label and long_label
+            else "Slope unavailable because one of the anchor tenors is missing."
+        )
         st.markdown(
-            "**Interpretation:** Track inversion risk and policy expectations through the key slope measures. "
-            + two_ten_text
+            "**Interpretation:** "
+            + curve_shape_text
+            + (" " + " | ".join(latest_notes) if latest_notes else "")
             + " "
-            + three_ten_text
+            + slope_note
         )
 
+    # Plot 2: Curve Shifts vs Past
+    with _print_section():
+        st.subheader("Curve Shifts vs Past Dates")
+        fig2, ax2 = plt.subplots()
+        ax2.plot(
+            [TENOR_YEARS[t] for t in latest_curve.index], latest_curve.values, marker="o", label=str(latest_date.date())
+        )
+        for label, series in comp_curves.items():
+            ax2.plot([TENOR_YEARS[t] for t in series.index], series.values, marker="o", label=label)
+        ax2.set_xlabel("Maturity (years)")
+        ax2.set_ylabel("Yield (%)")
+        ax2.set_title("Yield Curve - Latest vs Past")
+        ax2.grid(True, which="both", linestyle=":")
+        ax2.legend()
+        st.pyplot(fig2)
+        shift_summary = (
+            " ".join(avg_shift_texts) if avg_shift_texts else "Historical curves are missing for this tenor set."
+        )
+        st.markdown(
+            "**Interpretation:** Compare the latest curve against past checkpoints to spot parallel shifts or twists. "
+            + shift_summary
+        )
+
+    # Plot 3: Spreads
+    with _print_section():
+        st.subheader("Key Spreads")
+        needed = ["2Y", "10Y", "3M"]
+        missing = [c for c in needed if c not in df.columns]
+        if missing:
+            st.info("Spreads require 3M, 2Y, and 10Y to be present.")
+        else:
+            spreads = pd.DataFrame(index=df.index)
+            spreads["2s10s"] = df["10Y"] - df["2Y"]
+            spreads["3m10y"] = df["10Y"] - df["3M"]
+
+            fig3, ax3 = plt.subplots()
+            ax3.plot(spreads.index, spreads["2s10s"] * 100, label="2s10s")
+            ax3.plot(spreads.index, spreads["3m10y"] * 100, label="3m10y")
+            ax3.axhline(0, linestyle=":")
+            ax3.set_title("Spreads Over Time")
+            ax3.set_ylabel("Spread (bps)")
+            ax3.grid(True, which="both", linestyle=":")
+            ax3.legend()
+            st.pyplot(fig3)
+            last_spreads = spreads.iloc[-1]
+            two_ten_val = last_spreads.get("2s10s")
+            three_ten_val = last_spreads.get("3m10y")
+            if two_ten_val is not None and not pd.isna(two_ten_val):
+                two_ten_comment = (
+                    "curve is inverted between 2Y and 10Y" if two_ten_val < 0 else "curve is upward sloping between 2Y and 10Y"
+                )
+                two_ten_text = f"2s10s: {_fmt_bps(float(two_ten_val))} ({two_ten_comment})."
+            else:
+                two_ten_text = "2s10s spread unavailable."
+            if three_ten_val is not None and not pd.isna(three_ten_val):
+                three_ten_comment = (
+                    "front-end pressure persists" if three_ten_val < 0 else "front-end yields sit below the 10Y point"
+                )
+                three_ten_text = f"3m10y: {_fmt_bps(float(three_ten_val))} ({three_ten_comment})."
+            else:
+                three_ten_text = "3m10y spread unavailable."
+            st.markdown(
+                "**Interpretation:** Track inversion risk and policy expectations through the key slope measures. "
+                + two_ten_text
+                + " "
+                + three_ten_text
+            )
+
     # Plot 4: Heatmap
-    st.subheader("Yield Heatmap (Time x Tenor)")
-    mat_cols = [c for c in TENOR_ORDER if c in df.columns]
-    Z = df[mat_cols].to_numpy()
-    Y = np.arange(Z.shape[0])
-    X = np.arange(Z.shape[1])
-    fig4, ax4 = plt.subplots()
-    c = ax4.pcolormesh(X, Y, Z, shading="auto")
-    ax4.set_title("Yields (%)")
-    ax4.set_xlabel("Tenor")
-    ax4.set_ylabel("Time (old to new)")
-    ax4.set_xticks(np.arange(len(mat_cols)) + 0.5)
-    ax4.set_xticklabels(mat_cols, rotation=0)
-    fig4.colorbar(c, ax=ax4, label="%")
-    st.pyplot(fig4)
-    if Z.size:
-        heatmap_min = float(np.nanmin(Z))
-        heatmap_max = float(np.nanmax(Z))
-    else:
-        heatmap_min = heatmap_max = None
-    heatmap_range_text = (
-        f"Range {_fmt_pct(heatmap_min)} to {_fmt_pct(heatmap_max)}."
-        if heatmap_min is not None and heatmap_max is not None
-        else "Range unavailable because every tenor is missing."
-    )
-    st.markdown(
-        "**Interpretation:** Watch for horizontal color changes to spot tenor-specific moves and diagonal gradients for rolling steepeners or flatteners. "
-        + heatmap_range_text
-    )
+    with _print_section():
+        st.subheader("Yield Heatmap (Time x Tenor)")
+        mat_cols = [c for c in TENOR_ORDER if c in df.columns]
+        Z = df[mat_cols].to_numpy()
+        Y = np.arange(Z.shape[0])
+        X = np.arange(Z.shape[1])
+        fig4, ax4 = plt.subplots()
+        c = ax4.pcolormesh(X, Y, Z, shading="auto")
+        ax4.set_title("Yields (%)")
+        ax4.set_xlabel("Tenor")
+        ax4.set_ylabel("Time (old to new)")
+        ax4.set_xticks(np.arange(len(mat_cols)) + 0.5)
+        ax4.set_xticklabels(mat_cols, rotation=0)
+        fig4.colorbar(c, ax=ax4, label="%")
+        st.pyplot(fig4)
+        if Z.size:
+            heatmap_min = float(np.nanmin(Z))
+            heatmap_max = float(np.nanmax(Z))
+        else:
+            heatmap_min = heatmap_max = None
+        heatmap_range_text = (
+            f"Range {_fmt_pct(heatmap_min)} to {_fmt_pct(heatmap_max)}."
+            if heatmap_min is not None and heatmap_max is not None
+            else "Range unavailable because every tenor is missing."
+        )
+        st.markdown(
+            "**Interpretation:** Watch for horizontal color changes to spot tenor-specific moves and diagonal gradients for rolling steepeners or flatteners. "
+            + heatmap_range_text
+        )
 
     # Bootstrapped zero and forward curves from par yields
-    st.subheader("Bootstrapped Zero Curve & 1Y Forward (semiannual)")
-    st.caption("Zeros bootstrapped from par yields (semiannual coupons); forwards from discount factors.")
+    with _print_section():
+        st.subheader("Bootstrapped Zero Curve & 1Y Forward (semiannual)")
+        st.caption("Zeros bootstrapped from par yields (semiannual coupons); forwards from discount factors.")
 
-    def bootstrap_zeros_from_par(par_yields_pct: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
-        """
-        Bootstrap discount factors and zero rates from par yields using semiannual coupons.
-        Returns (grid_times_years, zero_rates_annual, df_map) where df_map maps T->DF.
-        """
-        y = (par_yields_pct / 100.0).dropna()
-        if y.empty:
-            return np.array([]), np.array([]), {}
-        # Known par nodes (T in years, r in decimals)
-        known_T = np.array([TENOR_YEARS[t] for t in y.index])
-        known_r = y.values
-        order = np.argsort(known_T)
-        known_T = known_T[order]
-        known_r = known_r[order]
+        def bootstrap_zeros_from_par(par_yields_pct: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
+            """
+            Bootstrap discount factors and zero rates from par yields using semiannual coupons.
+            Returns (grid_times_years, zero_rates_annual, df_map) where df_map maps T->DF.
+            """
+            y = (par_yields_pct / 100.0).dropna()
+            if y.empty:
+                return np.array([]), np.array([]), {}
+            # Known par nodes (T in years, r in decimals)
+            known_T = np.array([TENOR_YEARS[t] for t in y.index])
+            known_r = y.values
+            order = np.argsort(known_T)
+            known_T = known_T[order]
+            known_r = known_r[order]
 
-        max_T = known_T.max()
-        # Build semiannual grid from 0.5Y up to max_T
-        f = 2  # semiannual
-        grid = np.arange(0.5, max_T + 1e-9, 0.5)
-        # Interpolate par yields onto the grid (flat extrapolation at ends)
-        r_grid = np.interp(grid, known_T, known_r)
+            max_T = known_T.max()
+            # Build semiannual grid from 0.5Y up to max_T
+            f = 2  # semiannual
+            grid = np.arange(0.5, max_T + 1e-9, 0.5)
+            # Interpolate par yields onto the grid (flat extrapolation at ends)
+            r_grid = np.interp(grid, known_T, known_r)
 
-        D: dict[float, float] = {}
-        for T, r_par in zip(grid, r_grid):
-            n = int(round(T * f))
-            c = r_par / f
-            if n == 1:
-                # One coupon/payment: price 1 = (1+c)*D(T)
-                D[T] = 1.0 / (1.0 + c)
-            else:
-                # 1 = c*sum_{k=1..n-1} D(k/f) + (1+c) D(T)
-                s = 0.0
-                for k in range(1, n):
-                    Tk = k / f
-                    # Ensure previous DF exists (should by construction); if not, linearly interpolate
-                    if Tk in D:
-                        s += D[Tk]
-                    else:
-                        # Linear interpolation between nearest available nodes in D
-                        prev_keys = sorted([tt for tt in D.keys() if tt < Tk])
-                        next_keys = sorted([tt for tt in D.keys() if tt > Tk])
-                        if prev_keys and next_keys:
-                            t0 = prev_keys[-1]; t1 = next_keys[0]
-                            Dk = D[t0] + (D[t1] - D[t0]) * (Tk - t0) / (t1 - t0)
-                        elif prev_keys:
-                            Dk = D[prev_keys[-1]]
-                        elif next_keys:
-                            Dk = D[next_keys[0]]
+            D: dict[float, float] = {}
+            for T, r_par in zip(grid, r_grid):
+                n = int(round(T * f))
+                c = r_par / f
+                if n == 1:
+                    # One coupon/payment: price 1 = (1+c)*D(T)
+                    D[T] = 1.0 / (1.0 + c)
+                else:
+                    # 1 = c*sum_{k=1..n-1} D(k/f) + (1+c) D(T)
+                    s = 0.0
+                    for k in range(1, n):
+                        Tk = k / f
+                        # Ensure previous DF exists (should by construction); if not, linearly interpolate
+                        if Tk in D:
+                            s += D[Tk]
                         else:
-                            Dk = np.exp(-r_par * Tk)  # fallback
-                        s += Dk
-                D[T] = max(1e-9, (1.0 - c * s) / (1.0 + c))
+                            # Linear interpolation between nearest available nodes in D
+                            prev_keys = sorted([tt for tt in D.keys() if tt < Tk])
+                            next_keys = sorted([tt for tt in D.keys() if tt > Tk])
+                            if prev_keys and next_keys:
+                                t0 = prev_keys[-1]
+                                t1 = next_keys[0]
+                                Dk = D[t0] + (D[t1] - D[t0]) * (Tk - t0) / (t1 - t0)
+                            elif prev_keys:
+                                Dk = D[prev_keys[-1]]
+                            elif next_keys:
+                                Dk = D[next_keys[0]]
+                            else:
+                                Dk = np.exp(-r_par * Tk)  # fallback
+                            s += Dk
+                    D[T] = max(1e-9, (1.0 - c * s) / (1.0 + c))
 
-        # Convert DFs to annual-compounded zero rates: (1/D)^(1/T) - 1
-        zeros = np.array([(D[T] ** (-1.0 / T)) - 1.0 for T in grid])
-        return grid, zeros, D
+            # Convert DFs to annual-compounded zero rates: (1/D)^(1/T) - 1
+            zeros = np.array([(D[T] ** (-1.0 / T)) - 1.0 for T in grid])
+            return grid, zeros, D
 
-    if not latest_curve.empty:
-        grid, zero_rates, Dmap = bootstrap_zeros_from_par(latest_curve)
-        if grid.size:
-            fig5, ax5 = plt.subplots()
-            ax5.plot(grid, zero_rates * 100)
-            ax5.set_title(f"Bootstrapped Zero Curve – {latest_date.date()}")
-            ax5.set_xlabel("Maturity (years)")
-            ax5.set_ylabel("Zero Rate (annual, %)")
-            ax5.grid(True, linestyle=":")
-            st.pyplot(fig5)
-            zero_front_pct = zero_rates[0] * 100 if zero_rates.size else None
-            zero_long_pct = zero_rates[-1] * 100 if zero_rates.size else None
-            zero_slope_pp = (
-                zero_long_pct - zero_front_pct
-                if zero_front_pct is not None and zero_long_pct is not None
-                else None
-            )
-            slope_note_zero = (
-                f"Slope ({zero_long_pct:.2f}% - {zero_front_pct:.2f}%): {_fmt_pp(zero_slope_pp)}."
-                if zero_slope_pp is not None
-                else "Slope unavailable because discount factors did not span both ends."
-            )
-            st.markdown(
-                "**Interpretation:** Discount factors translate into zero-coupon rates—compare front and long maturities to see the pure time-value curve without coupon noise. "
-                + slope_note_zero
-            )
-
-            # 1Y forward starting at t: f(t,t+1) = D(t)/D(t+1) - 1 (annualized)
-            t_vals = []
-            fwd_vals = []
-            for T in grid:
-                T2 = T + 1.0
-                if any(abs(T2 - g) < 1e-9 for g in grid):
-                    # Use exact grid if present
-                    D_t = Dmap[T]
-                    D_t1 = Dmap[T2]
-                    fwd = (D_t / D_t1) - 1.0
-                    t_vals.append(T)
-                    fwd_vals.append(fwd)
-            if t_vals:
-                fig6, ax6 = plt.subplots()
-                ax6.plot(t_vals, np.array(fwd_vals) * 100)
-                ax6.set_title("Bootstrapped 1Y Forward Rate Curve (from t to t+1)")
-                ax6.set_xlabel("Start (years)")
-                ax6.set_ylabel("Forward 1Y (annual, %)")
-                ax6.grid(True, linestyle=":")
-                st.pyplot(fig6)
-                fwd_front_pct = fwd_vals[0] * 100 if fwd_vals else None
-                fwd_last_pct = fwd_vals[-1] * 100 if fwd_vals else None
-                st.markdown(
-                    "**Interpretation:** Forward rates infer the market's expectation for a 1-year loan that starts in the future; rising forwards point to expected tightening. "
-                    + (
-                        f"Start-to-end range: {_fmt_pct(fwd_front_pct)} to {_fmt_pct(fwd_last_pct)}."
-                        if fwd_front_pct is not None and fwd_last_pct is not None
-                        else "Forward range unavailable because not enough points were bootstrapped."
-                    )
+        if not latest_curve.empty:
+            grid, zero_rates, Dmap = bootstrap_zeros_from_par(latest_curve)
+            if grid.size:
+                fig5, ax5 = plt.subplots()
+                ax5.plot(grid, zero_rates * 100)
+                ax5.set_title(f"Bootstrapped Zero Curve – {latest_date.date()}")
+                ax5.set_xlabel("Maturity (years)")
+                ax5.set_ylabel("Zero Rate (annual, %)")
+                ax5.grid(True, linestyle=":")
+                st.pyplot(fig5)
+                zero_front_pct = zero_rates[0] * 100 if zero_rates.size else None
+                zero_long_pct = zero_rates[-1] * 100 if zero_rates.size else None
+                zero_slope_pp = (
+                    zero_long_pct - zero_front_pct
+                    if zero_front_pct is not None and zero_long_pct is not None
+                    else None
                 )
+                slope_note_zero = (
+                    f"Slope ({zero_long_pct:.2f}% - {zero_front_pct:.2f}%): {_fmt_pp(zero_slope_pp)}."
+                    if zero_slope_pp is not None
+                    else "Slope unavailable because discount factors did not span both ends."
+                )
+                st.markdown(
+                    "**Interpretation:** Discount factors translate into zero-coupon rates—compare front and long maturities to see the pure time-value curve without coupon noise. "
+                    + slope_note_zero
+                )
+
+                # 1Y forward starting at t: f(t,t+1) = D(t)/D(t+1) - 1 (annualized)
+                t_vals = []
+                fwd_vals = []
+                for T in grid:
+                    T2 = T + 1.0
+                    if any(abs(T2 - g) < 1e-9 for g in grid):
+                        # Use exact grid if present
+                        D_t = Dmap[T]
+                        D_t1 = Dmap[T2]
+                        fwd = (D_t / D_t1) - 1.0
+                        t_vals.append(T)
+                        fwd_vals.append(fwd)
+                if t_vals:
+                    fig6, ax6 = plt.subplots()
+                    ax6.plot(t_vals, np.array(fwd_vals) * 100)
+                    ax6.set_title("Bootstrapped 1Y Forward Rate Curve (from t to t+1)")
+                    ax6.set_xlabel("Start (years)")
+                    ax6.set_ylabel("Forward 1Y (annual, %)")
+                    ax6.grid(True, linestyle=":")
+                    st.pyplot(fig6)
+                    fwd_front_pct = fwd_vals[0] * 100 if fwd_vals else None
+                    fwd_last_pct = fwd_vals[-1] * 100 if fwd_vals else None
+                    st.markdown(
+                        "**Interpretation:** Forward rates infer the market's expectation for a 1-year loan that starts in the future; rising forwards point to expected tightening. "
+                        + (
+                            f"Start-to-end range: {_fmt_pct(fwd_front_pct)} to {_fmt_pct(fwd_last_pct)}."
+                            if fwd_front_pct is not None and fwd_last_pct is not None
+                            else "Forward range unavailable because not enough points were bootstrapped."
+                        )
+                    )
 
     st.success("Loaded via: " + ("bondviz API" if source == "bondviz API" else source))
