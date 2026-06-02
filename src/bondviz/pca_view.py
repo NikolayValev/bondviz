@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from bondviz.visualizer import load_from_bondviz_range, load_from_fred, USE_BONDVIZ, TENOR_TO_SERIES
+from bondviz import theme
 
 MACRO_INFLATION_SERIES = {"5Y5Y Inflation (FRED)": "T5YIFR"}
 PCA_CACHE_KEY = "yield_pca_results"
@@ -91,6 +92,7 @@ def _zscore(series: pd.Series) -> pd.Series:
 
 
 def render_yield_pca():
+    theme.inject_global_css()
     st.subheader("Yield Curve PCA")
     with st.form("pca_form"):
         mode = st.radio("Source", ["Treasury Data", "Upload CSV"], horizontal=True)
