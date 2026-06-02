@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0a0e14;
+  --panel: #131722;
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --accent: #00d68f;
+  --text: #e6e6e6;
+  --muted: #8b95a7;
+  --grid: rgba(255, 255, 255, 0.10);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.tabnum {
+  font-variant-numeric: tabular-nums;
+  font-family: "SFMono-Regular", "Consolas", "Roboto Mono", monospace;
+}
+
+h1, h2, h3 { letter-spacing: 0.01em; }
+
+a { color: inherit; }

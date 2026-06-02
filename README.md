@@ -120,6 +120,12 @@ Compatible with Windows, WSL, and macOS
    POLYGON_API_KEY = "your_key_here"
    ```
 
+## Web front-end (Vercel)
+
+A native Next.js + D3 front-end lives in [`web/`](web/) and deploys to Vercel at a custom domain
+(see [`web/README.md`](web/README.md)). It reuses the same Treasury data and is independent of the
+Streamlit app.
+
 ### License
 
 MIT License
