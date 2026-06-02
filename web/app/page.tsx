@@ -1,65 +1,70 @@
-import Image from "next/image";
+import Link from "next/link";
+import { headers } from "next/headers";
+import { Card } from "@/components/ui/Card";
+import { Kpi } from "@/components/ui/Kpi";
+import { computeCurveKpis } from "@/lib/finance";
+import { Kpis } from "@/lib/types";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+async function getKpis(): Promise<{ kpis: Kpis | null; date: string | null }> {
+  try {
+    const h = await headers();
+    const host = h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    const res = await fetch(`${proto}://${host}/api/treasury/latest`, { cache: "no-store" });
+    if (!res.ok) return { kpis: null, date: null };
+    const { row } = await res.json();
+    if (!row) return { kpis: null, date: null };
+    return { kpis: computeCurveKpis(row), date: row.date };
+  } catch {
+    return { kpis: null, date: null };
+  }
+}
+
+const pct = (v: number | null) => (v === null ? "—" : `${v.toFixed(2)}%`);
+const bps = (v: number | null) => (v === null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} bps`);
+
+export default async function Home() {
+  const { kpis, date } = await getKpis();
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="space-y-8">
+      <section>
+        <h1 className="text-4xl font-semibold text-[var(--accent)]">BONDVIZ</h1>
+        <p className="mt-1 text-lg text-[var(--muted)]">Fixed-income research terminal</p>
+        <p className="mt-3 max-w-2xl text-[var(--text)]">
+          Live U.S. Treasury data to visualize the yield curve and price bonds. A front-end-focused
+          demo built with Next.js and hand-rolled D3 charts.
+        </p>
+      </section>
+
+      <Card>
+        <h2 className="mb-3 text-lg">Snapshot{date ? ` · ${date}` : ""}</h2>
+        {kpis === null ? (
+          <p className="text-[var(--muted)]">Live Treasury snapshot unavailable — open the tools from the nav.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Kpi label="10Y Treasury" value={pct(kpis.tenYear)} />
+            <Kpi label="2s10s spread" value={bps(kpis.twos10s)} />
+            <Kpi label="3m10y spread" value={bps(kpis.threeM10Y)} />
+          </div>
+        )}
+      </Card>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Link href="/yield-curve">
+          <Card className="h-full transition-colors hover:border-l-[var(--text)]">
+            <h3 className="text-[var(--accent)]">Yield Curve →</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">Latest curve, shifts vs the past, and key spreads.</p>
+          </Card>
+        </Link>
+        <Link href="/pricing">
+          <Card className="h-full transition-colors hover:border-l-[var(--text)]">
+            <h3 className="text-[var(--accent)]">Bond Pricing →</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">Continuous-compounding present value calculator.</p>
+          </Card>
+        </Link>
+      </section>
     </div>
   );
 }
