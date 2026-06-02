@@ -107,6 +107,19 @@ Handles namespace changes and missing date tags gracefully
 
 Compatible with Windows, WSL, and macOS
 
+## Deploy to Streamlit Community Cloud
+
+1. Push this repo to GitHub.
+2. On [share.streamlit.io](https://share.streamlit.io), create a new app pointing at `app/streamlit_app.py`.
+3. Streamlit installs `requirements.txt` (pure Python — no C++ build; bond math falls
+   back to the Python implementation when the native extension is absent).
+4. Home and Fixed Income work with no configuration. For the Stocks page, add a secret
+   under **Manage app → Settings → Secrets**:
+
+   ```toml
+   POLYGON_API_KEY = "your_key_here"
+   ```
+
 ### License
 
 MIT License

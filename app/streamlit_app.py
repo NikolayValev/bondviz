@@ -1,58 +1,50 @@
-import streamlit as st
-try:
-    from streamlit_option_menu import option_menu as _option_menu  # type: ignore
-except Exception:
-    _option_menu = None
-from bondviz.app_logic import compute_pv
-from bondviz.visualizer import render_visualizer
-from bondviz.stocks_view import render_polygon_stocks
-from bondviz.pca_view import render_yield_pca
+import sys
+from pathlib import Path
 
-st.set_page_config(page_title="BondViz", layout="wide")
+# Make `bondviz` importable when the package isn't pip-installed (e.g. Streamlit Cloud).
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if _SRC.is_dir() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
-# Header menu
-st.title("BondViz")
+import streamlit as st  # noqa: E402
 
-def nav_menu() -> str:
-    items = ["Treasury Yields", "Curve Calculations", "Stock Picker"]
-    if _option_menu is not None:
-        with st.container():
-            return _option_menu(
-                None,
-                items,
-                icons=["graph-up", "calculator", "bar-chart"],
-                menu_icon="cast",
-                default_index=0,
-                orientation="horizontal",
-            )
-    else:
-        # Fallback if streamlit-option-menu is not installed
-        return st.radio("Navigation", items, horizontal=True)
+from bondviz import theme  # noqa: E402
+from bondviz.home_view import render_home  # noqa: E402
+from bondviz.pca_view import render_yield_pca  # noqa: E402
+from bondviz.pricing_view import render_pricing  # noqa: E402
+from bondviz.stocks_view import render_polygon_stocks  # noqa: E402
+from bondviz.visualizer import render_visualizer  # noqa: E402
 
-page = nav_menu()
+st.set_page_config(page_title="BondViz", page_icon="📈", layout="wide")
+theme.apply_mpl_style()
+theme.inject_global_css()
 
-if page == "Treasury Yields":
-    st.header("Treasury Yields")
-    render_visualizer()
+# Pages (functions wrapped as st.Page) + a name->page registry for cross-page links.
+yield_curve = st.Page(render_visualizer, title="Yield Curve", icon="📈", url_path="yield-curve")
+bond_pricing = st.Page(render_pricing, title="Bond Pricing", icon="🧮", url_path="bond-pricing")
+pca_factors = st.Page(render_yield_pca, title="PCA Factors", icon="🧬", url_path="pca")
+stocks = st.Page(render_polygon_stocks, title="Stocks", icon="📊", url_path="stocks")
 
-elif page == "Curve Calculations":
-    st.header("Curve Calculations")
-    with st.sidebar.form("pv_form"):
-        st.subheader("Price a Fixed Coupon Bond")
-        F = st.number_input("Face", value=1000.0, step=100.0, key="pv_face")
-        c = st.number_input("Coupon rate", value=0.05, step=0.005, format="%.3f", key="pv_coupon")
-        y = st.number_input("Continuous yield", value=0.04, step=0.005, format="%.3f", key="pv_yield")
-        T = st.number_input("Years to maturity", value=10.0, step=1.0, key="pv_years")
-        submitted = st.form_submit_button("Calculate")
+_registry = {
+    "Yield Curve": yield_curve,
+    "Bond Pricing": bond_pricing,
+    "PCA Factors": pca_factors,
+    "Stocks": stocks,
+}
 
-    if submitted or "pv_result" not in st.session_state:
-        st.session_state["pv_result"] = compute_pv(F, c, y, T)
+home = st.Page(
+    lambda: render_home(_registry),
+    title="Home",
+    icon="🏠",
+    url_path="home",
+    default=True,
+)
 
-    st.metric("Present Value", f"{st.session_state['pv_result']:,.2f}")
-
-    st.divider()
-    render_yield_pca()
-
-elif page == "Stock Picker":
-    st.header("Stock Picker")
-    render_polygon_stocks()
+nav = st.navigation(
+    {
+        "": [home],
+        "Fixed Income": [yield_curve, bond_pricing, pca_factors],
+        "Markets": [stocks],
+    }
+)
+nav.run()

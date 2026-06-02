@@ -32,8 +32,9 @@ desktop.ini
 .pytest_cache/
 .coverage
 
-# Streamlit
-.streamlit/
+# Streamlit (keep theme config; ignore local secrets)
+.streamlit/*
+!.streamlit/config.toml
 
 # Jupyter
 .ipynb_checkpoints/
