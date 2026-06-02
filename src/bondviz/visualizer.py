@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,67 +39,9 @@ BC_TO_TENOR = {
     "BC_30YEAR": "30Y",
 }
 
-PRINT_STYLE_SESSION_KEY = "_bondviz_print_css_loaded"
-PRINT_SECTION_CLASS = "bondviz-section"
-
-
-def _inject_print_styles() -> None:
-    if st.session_state.get(PRINT_STYLE_SESSION_KEY):
-        return
-    st.session_state[PRINT_STYLE_SESSION_KEY] = True
-    st.markdown(
-        f"""
-        <style>
-        .{PRINT_SECTION_CLASS} {{
-            border-radius: 10px;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.25rem;
-            background: #ffffff;
-        }}
-
-        @media print {{
-            body {{
-                color: #111;
-                background: #fff;
-            }}
-            header, footer,
-            [data-testid="stSidebar"],
-            [data-testid="stToolbar"] {{
-                display: none !important;
-            }}
-            .{PRINT_SECTION_CLASS} {{
-                break-inside: avoid;
-                page-break-inside: avoid;
-                padding: 0.35in 0.4in;
-                margin-bottom: 0.4in;
-                border: 1px solid #d4d4d4;
-                box-shadow: none;
-            }}
-            .{PRINT_SECTION_CLASS} h2,
-            .{PRINT_SECTION_CLASS} h3,
-            .{PRINT_SECTION_CLASS} h4,
-            .{PRINT_SECTION_CLASS} .stMarkdown {{
-                page-break-after: avoid;
-            }}
-            figure, img, canvas {{
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }}
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-@contextmanager
-def _print_section():
-    st.markdown(f'<div class="{PRINT_SECTION_CLASS}">', unsafe_allow_html=True)
-    try:
-        yield
-    finally:
-        st.markdown("</div>", unsafe_allow_html=True)
+# Styling is centralized in theme.py; keep the original call-site names as aliases.
+from .theme import inject_global_css as _inject_print_styles  # noqa: E402
+from .theme import card as _print_section  # noqa: E402
 
 
 def _lazy_import_pdr():  # pragma: no cover - optional dependency
