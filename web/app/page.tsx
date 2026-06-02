@@ -1,20 +1,18 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { Card } from "@/components/ui/Card";
 import { Kpi } from "@/components/ui/Kpi";
-import { computeCurveKpis } from "@/lib/finance";
+import { computeCurveKpis, toBps } from "@/lib/finance";
+import { fetchTreasuryYear } from "@/lib/treasury";
 import { Kpis } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 async function getKpis(): Promise<{ kpis: Kpis | null; date: string | null }> {
   try {
-    const h = await headers();
-    const host = h.get("host");
-    const proto = h.get("x-forwarded-proto") ?? "http";
-    const res = await fetch(`${proto}://${host}/api/treasury/latest`, { cache: "no-store" });
-    if (!res.ok) return { kpis: null, date: null };
-    const { row } = await res.json();
+    const year = new Date().getUTCFullYear();
+    let rows = await fetchTreasuryYear(year);
+    if (rows.length === 0) rows = await fetchTreasuryYear(year - 1);
+    const row = rows.at(-1);
     if (!row) return { kpis: null, date: null };
     return { kpis: computeCurveKpis(row), date: row.date };
   } catch {
@@ -23,7 +21,7 @@ async function getKpis(): Promise<{ kpis: Kpis | null; date: string | null }> {
 }
 
 const pct = (v: number | null) => (v === null ? "—" : `${v.toFixed(2)}%`);
-const bps = (v: number | null) => (v === null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)} bps`);
+const bps = (v: number | null) => (v === null ? "—" : `${v >= 0 ? "+" : ""}${toBps(v).toFixed(0)} bps`);
 
 export default async function Home() {
   const { kpis, date } = await getKpis();

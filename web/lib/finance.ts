@@ -11,6 +11,9 @@ export const BC_TO_TENOR: Record<string, TenorLabel> = {
   BC_7YEAR: "7Y", BC_10YEAR: "10Y", BC_20YEAR: "20Y", BC_30YEAR: "30Y",
 };
 
+/** Convert a spread/level in percentage points to basis points. */
+export const toBps = (pp: number): number => pp * 100;
+
 export function pvContinuous(face: number, coupon: number, yieldRate: number, years: number): number {
   const C = face * coupon;
   if (yieldRate === 0) return C * years + face;

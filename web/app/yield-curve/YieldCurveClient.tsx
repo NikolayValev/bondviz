@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { LineChart, Series } from "@/components/charts/LineChart";
-import { rowToCurve, spreadSeries, describeCurve } from "@/lib/finance";
+import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
 import { YieldRow } from "@/lib/types";
 
 const COMPARE = [
@@ -63,8 +63,8 @@ export function YieldCurveClient() {
 
     const { twos10s, threeM10Y } = spreadSeries(rows);
     const spreadSeriesData: Series[] = [
-      { id: "2s10s", label: "2s10s", color: "#00d68f", points: twos10s.map(([t, v]) => [t, v * 100]) },
-      { id: "3m10y", label: "3m10y", color: "#5b8def", points: threeM10Y.map(([t, v]) => [t, v * 100]) },
+      { id: "2s10s", label: "2s10s", color: "#00d68f", points: twos10s.map(([t, v]) => [t, toBps(v)]) },
+      { id: "3m10y", label: "3m10y", color: "#5b8def", points: threeM10Y.map(([t, v]) => [t, toBps(v)]) },
     ];
 
     return { latest, latestCurve, curveSeries, spreadSeriesData };
