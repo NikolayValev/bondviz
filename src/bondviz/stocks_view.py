@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from .stocks import fetch_aggregates
+from . import theme
 
 
 def _default_polygon_key() -> str:
@@ -27,7 +28,15 @@ def _cached_aggs(ticker: str, start: date, end: date, multiplier: int, timespan:
 
 
 def render_polygon_stocks():
+    theme.inject_global_css()
     st.header("Stocks (Polygon.io)")
+    if not _default_polygon_key():
+        st.info(
+            "**Polygon API key not set.** Add `POLYGON_API_KEY` to your Streamlit secrets "
+            "(Manage app → Settings → Secrets) or a local `.env` to enable live stock data. "
+            "The Home and Fixed Income pages work without any key."
+        )
+        return
     with st.sidebar.form("polygon_form"):
         tickers_csv = st.text_input("Tickers (comma-separated)", value="AAPL, MSFT, GOOGL")
 
