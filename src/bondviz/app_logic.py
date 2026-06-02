@@ -33,3 +33,23 @@ def compute_pv(face_value: float, coupon_rate: float, yield_rate: float, years: 
     """Wrapper for present value under continuous compounding."""
     return pv_continuous(face_value, coupon_rate, yield_rate, years)
 
+
+def compute_curve_kpis(latest: pd.Series) -> dict[str, float | None]:
+    """Headline yield-curve KPIs from a Treasury par-yield row (BC_* columns, percent).
+
+    Returns 10Y level plus the 2s10s and 3m10y slopes in percentage points.
+    Any missing/NaN input yields None for the affected metric.
+    """
+    def _val(col: str) -> float | None:
+        v = latest.get(col)
+        return float(v) if v is not None and pd.notna(v) else None
+
+    y10 = _val("BC_10YEAR")
+    y2 = _val("BC_2YEAR")
+    y3m = _val("BC_3MONTH")
+    return {
+        "10Y": y10,
+        "2s10s": (y10 - y2) if (y10 is not None and y2 is not None) else None,
+        "3m10y": (y10 - y3m) if (y10 is not None and y3m is not None) else None,
+    }
+
