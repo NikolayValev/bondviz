@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from typing import Sequence, Tuple
+from typing import Mapping, Sequence, Tuple
 
 def plot_yield_curve(latest_row: pd.Series):
     tenors = []
@@ -32,4 +32,25 @@ def plot_discount_factors(points: Sequence[Tuple[float,float]]):
     ax.set_xlabel("Years")
     ax.set_ylabel("Discount factor")
     ax.grid(True, linestyle="--", alpha=0.4)
+    return fig
+
+
+def plot_scenarios(rows: Sequence[Mapping[str, float]]):
+    """Bond price vs. parallel yield shift: full reprice vs. the duration+convexity
+    approximation, so the convexity gap is visible. ``rows`` is the output of
+    ``scenarios.scenario_shift``."""
+    shifts = [r["shift_bps"] for r in rows]
+    actual = [r["new_price"] for r in rows]
+    # Base price is constant across rows: new_price - dollar_change.
+    base = rows[0]["new_price"] - rows[0]["dollar_change"]
+    approx = [base * (1 + r["approx_pct_change"]) for r in rows]
+
+    fig, ax = plt.subplots()
+    ax.plot(shifts, actual, marker="o", label="Actual reprice")
+    ax.plot(shifts, approx, marker="s", linestyle="--", label="Duration + convexity")
+    ax.set_title("Scenario Analysis — Price vs. Parallel Yield Shift")
+    ax.set_xlabel("Yield shift (bps)")
+    ax.set_ylabel("Price")
+    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.legend()
     return fig

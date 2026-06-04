@@ -5,15 +5,25 @@
 
 namespace py = pybind11;
 
-double pv_continuous(double face_value, double coupon_rate, double yield_rate, double years) {
-    const double C = face_value * coupon_rate;
-    const double r = yield_rate;
-    const double T = years;
-    if (r == 0.0) {
-        return C * T + face_value;
+double pv_continuous(double face_value, double coupon_rate, double yield_rate,
+                     double years, int freq) {
+    // Discrete coupon schedule discounted under continuous compounding, kept
+    // numerically identical to pricing._bond_cashflows + price_from_cashflows.
+    int n = static_cast<int>(std::lround(years * freq));
+    if (n < 1) {
+        n = 1;
     }
-    const double discount = std::exp(-r * T);
-    return C * (1.0 - discount) / r + face_value * discount;
+    const double coupon_pmt = face_value * coupon_rate / freq;
+    double pv = 0.0;
+    for (int i = 1; i <= n; ++i) {
+        const double t = static_cast<double>(i) / freq;
+        double cf = coupon_pmt;
+        if (i == n) {
+            cf += face_value;
+        }
+        pv += cf * std::exp(-yield_rate * t);
+    }
+    return pv;
 }
 
 py::list discount_factors_continuous(double yield_rate, py::iterable tenors) {
@@ -36,6 +46,7 @@ PYBIND11_MODULE(_native, m) {
         py::arg("coupon_rate"),
         py::arg("yield_rate"),
         py::arg("years"),
+        py::arg("freq") = 2,
         "Present value of a fixed coupon bond under continuous compounding."
     );
 

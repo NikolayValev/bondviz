@@ -4,7 +4,12 @@ import pandas as pd
 from datetime import date as Date
 
 from .treasury import latest_par_yields
-from .pricing import pv_continuous
+from .pricing import (
+    _bond_cashflows,
+    convexity,
+    modified_duration,
+    pv_continuous,
+)
 
 
 def get_latest_treasury_table() -> tuple[pd.Series, Date, pd.DataFrame]:
@@ -32,6 +37,26 @@ def get_latest_treasury_table() -> tuple[pd.Series, Date, pd.DataFrame]:
 def compute_pv(face_value: float, coupon_rate: float, yield_rate: float, years: float) -> float:
     """Wrapper for present value under continuous compounding."""
     return pv_continuous(face_value, coupon_rate, yield_rate, years)
+
+
+def compute_bond_metrics(
+    face_value: float,
+    coupon_rate: float,
+    yield_rate: float,
+    years: float,
+    freq: int = 2,
+) -> dict[str, float]:
+    """Present value plus modified duration and convexity for a bond.
+
+    Thin wrapper so the UI layer holds no financial math: it builds the shared
+    cashflow schedule once and feeds it to the pricing analytics.
+    """
+    cashflows, times = _bond_cashflows(face_value, coupon_rate, years, freq)
+    return {
+        "pv": pv_continuous(face_value, coupon_rate, yield_rate, years, freq),
+        "modified_duration": modified_duration(cashflows, times, yield_rate),
+        "convexity": convexity(cashflows, times, yield_rate),
+    }
 
 
 def compute_curve_kpis(latest: pd.Series) -> dict[str, float | None]:
