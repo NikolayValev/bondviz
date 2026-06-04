@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/yield-curve", label: "Yield Curve" },
   { href: "/pricing", label: "Bond Pricing" },
+  { href: "/portfolio", label: "Portfolio" },
 ];
 
 export function Nav() {
