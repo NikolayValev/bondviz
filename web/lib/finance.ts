@@ -128,6 +128,116 @@ export function symmetricShifts(magnitudes: number[]): number[] {
   return [...set].sort((a, b) => a - b);
 }
 
+/** DV01 — dollar value of a 1 bp yield rise (≈ modified duration · price · 1e-4). */
+export function dv01(cashflows: number[], times: number[], yieldRate: number): number {
+  const price = priceFromCashflows(cashflows, times, yieldRate);
+  return modifiedDuration(cashflows, times, yieldRate) * price * 1e-4;
+}
+
+/** Current yield = annual coupon / price. */
+export function currentYield(face: number, coupon: number, price: number): number {
+  return (face * coupon) / price;
+}
+
+/** Annual coupon income in dollars. */
+export function couponIncome(face: number, coupon: number): number {
+  return face * coupon;
+}
+
+/** Solve for the continuous yield that reprices the bond to a target price.
+ *  Price is monotonically decreasing in yield, so a bisection is robust. */
+export function solveYield(
+  face: number,
+  coupon: number,
+  years: number,
+  freq: number,
+  targetPrice: number,
+): number {
+  const { cashflows, times } = bondCashflows(face, coupon, years, freq);
+  const priceAt = (y: number) => priceFromCashflows(cashflows, times, y);
+  let lo = -0.5;
+  let hi = 2.0;
+  // priceAt(lo) is high, priceAt(hi) is low; find y with priceAt(y) == target.
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    const p = priceAt(mid);
+    if (Math.abs(p - targetPrice) < 1e-10) return mid;
+    if (p > targetPrice) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+export interface PriceYieldPoint {
+  yield: number;
+  price: number;
+}
+
+/** Price as a function of yield — the convexity "bowl". */
+export function priceYieldCurve(
+  face: number,
+  coupon: number,
+  years: number,
+  freq: number,
+  yields: number[],
+): PriceYieldPoint[] {
+  const { cashflows, times } = bondCashflows(face, coupon, years, freq);
+  return yields.map((y) => ({ yield: y, price: priceFromCashflows(cashflows, times, y) }));
+}
+
+export interface DiscountedCashflow {
+  t: number;
+  cf: number;
+  pv: number;
+}
+
+/** Per-period cashflows and their present values (these PVs sum to the price). */
+export function discountedCashflows(
+  cashflows: number[],
+  times: number[],
+  yieldRate: number,
+): DiscountedCashflow[] {
+  return cashflows.map((cf, i) => ({ t: times[i], cf, pv: cf * Math.exp(-yieldRate * times[i]) }));
+}
+
+export interface HorizonResult {
+  couponIncome: number; // cashflows received on/before the horizon (incl. face if matured)
+  bondValue: number; // value of remaining cashflows, discounted to the horizon at the new yield
+  totalValue: number; // couponIncome + bondValue
+  initialPrice: number;
+  totalReturn: number; // totalValue / initialPrice − 1
+  annualizedReturn: number; // continuously-compounded, per year
+}
+
+/** Holding-period total return: collect coupons to the horizon, then value the
+ *  remaining bond at the horizon under a parallel yield shift. Coupons are held
+ *  (not reinvested) to keep the breakdown transparent. */
+export function horizonReturn(
+  params: BondParams,
+  horizonYears: number,
+  shiftBps: number,
+): HorizonResult {
+  const freq = params.freq ?? 2;
+  const { cashflows, times } = bondCashflows(params.face, params.coupon, params.years, freq);
+  const initialPrice = priceFromCashflows(cashflows, times, params.yield_);
+  const newYield = params.yield_ + shiftBps / 10_000;
+
+  let income = 0;
+  let bondValue = 0;
+  const eps = 1e-9;
+  for (let i = 0; i < cashflows.length; i++) {
+    if (times[i] <= horizonYears + eps) {
+      income += cashflows[i];
+    } else {
+      bondValue += cashflows[i] * Math.exp(-newYield * (times[i] - horizonYears));
+    }
+  }
+  const totalValue = income + bondValue;
+  const totalReturn = totalValue / initialPrice - 1;
+  const annualizedReturn = horizonYears > 0 ? Math.log(totalValue / initialPrice) / horizonYears : 0;
+  return { couponIncome: income, bondValue, totalValue, initialPrice, totalReturn, annualizedReturn };
+}
+
 export function discountFactors(yieldRate: number, tenors: number[]): { t: number; df: number }[] {
   return tenors.map((t) => ({ t, df: Math.exp(-yieldRate * t) }));
 }

@@ -8,6 +8,13 @@ import {
   convexity,
   scenarioShift,
   symmetricShifts,
+  dv01,
+  currentYield,
+  couponIncome,
+  solveYield,
+  priceYieldCurve,
+  discountedCashflows,
+  horizonReturn,
   discountFactors,
   computeCurveKpis,
   rowToCurve,
@@ -108,6 +115,70 @@ describe("symmetricShifts", () => {
     expect(symmetricShifts([100, 25, 50])).toEqual([-100, -50, -25, 0, 25, 50, 100]);
     expect(symmetricShifts([])).toEqual([0]);
     expect(symmetricShifts([50, 50])).toEqual([-50, 0, 50]);
+  });
+});
+
+describe("dv01", () => {
+  it("approximates the price drop for a +1bp yield rise", () => {
+    const { cashflows, times } = bondCashflows(1000, 0.05, 10, 2);
+    const exact = priceFromCashflows(cashflows, times, 0.04) - priceFromCashflows(cashflows, times, 0.0401);
+    expect(dv01(cashflows, times, 0.04)).toBeGreaterThan(0);
+    expect(dv01(cashflows, times, 0.04)).toBeCloseTo(exact, 3);
+  });
+});
+
+describe("currentYield & couponIncome", () => {
+  it("current yield is annual coupon over price", () => {
+    expect(currentYield(1000, 0.05, 1250)).toBeCloseTo(50 / 1250, 12);
+  });
+  it("coupon income is the annual coupon in dollars", () => {
+    expect(couponIncome(1000, 0.05)).toBeCloseTo(50, 12);
+  });
+});
+
+describe("solveYield", () => {
+  it("round-trips: price at y0 solves back to y0", () => {
+    const price = pvContinuous(1000, 0.05, 0.037, 10, 2);
+    expect(solveYield(1000, 0.05, 10, 2, price)).toBeCloseTo(0.037, 6);
+  });
+  it("a price below par implies a yield above the coupon", () => {
+    const price = pvContinuous(1000, 0.05, 0.06, 8, 2);
+    expect(solveYield(1000, 0.05, 8, 2, price)).toBeGreaterThan(0.05);
+  });
+});
+
+describe("priceYieldCurve", () => {
+  it("is downward sloping and matches pvContinuous at each yield", () => {
+    const pts = priceYieldCurve(1000, 0.05, 10, 2, [0.02, 0.04, 0.06]);
+    expect(pts[0].price).toBeGreaterThan(pts[2].price);
+    expect(pts[1].price).toBeCloseTo(pvContinuous(1000, 0.05, 0.04, 10, 2), 9);
+  });
+});
+
+describe("discountedCashflows", () => {
+  it("per-period PVs sum to the bond price", () => {
+    const { cashflows, times } = bondCashflows(1000, 0.05, 10, 2);
+    const dcf = discountedCashflows(cashflows, times, 0.04);
+    const sum = dcf.reduce((a, d) => a + d.pv, 0);
+    expect(sum).toBeCloseTo(priceFromCashflows(cashflows, times, 0.04), 9);
+    expect(dcf[dcf.length - 1].cf).toBeCloseTo(1025, 9);
+  });
+});
+
+describe("horizonReturn", () => {
+  const BOND = { face: 1000, coupon: 0.05, yield_: 0.04, years: 10, freq: 2 };
+
+  it("at maturity with no shift, total value is face plus all coupons", () => {
+    const r = horizonReturn(BOND, 10, 0);
+    expect(r.couponIncome).toBeCloseTo(1000 + 50 * 10, 6); // 20 semiannual coupons of 25 + face
+    expect(r.bondValue).toBeCloseTo(0, 9);
+    expect(r.totalReturn).toBeGreaterThan(0);
+  });
+  it("for a horizon before maturity, a yield rise lowers the bond's horizon value", () => {
+    const base = horizonReturn(BOND, 3, 0);
+    const up = horizonReturn(BOND, 3, 100);
+    expect(up.bondValue).toBeLessThan(base.bondValue);
+    expect(base.couponIncome).toBeCloseTo(25 * 6, 9); // 6 semiannual coupons by year 3
   });
 });
 
