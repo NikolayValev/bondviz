@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0e14;
-  --panel: #131722;
+  /* Surfaces */
+  --bg: #070a10;
+  --bg-2: #0a0e16;
+  --panel: #111620;
+  --panel-2: #0d121b;
   --panel-border: rgba(255, 255, 255, 0.08);
-  --accent: #00d68f;
-  --text: #e6e6e6;
+  --panel-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Type */
+  --text: #e8ecf2;
   --muted: #8b95a7;
-  --grid: rgba(255, 255, 255, 0.10);
+  --faint: #5b6577;
+
+  /* Brand + semantics */
+  --accent: #00d68f;
+  --accent-dim: rgba(0, 214, 143, 0.14);
+  --pos: #2fd98a;
+  --neg: #ff6b81;
+  --warn: #f2b65a;
+  --grid: rgba(255, 255, 255, 0.07);
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), "SFMono-Regular", "Consolas", monospace;
+
+  --radius: 14px;
 }
 
 html, body {
   background: var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Atmospheric backdrop: layered radial glows + a faint engineering grid. */
+body {
+  min-height: 100dvh;
+  background-image:
+    radial-gradient(900px 500px at 12% -8%, rgba(0, 214, 143, 0.10), transparent 60%),
+    radial-gradient(820px 520px at 100% 0%, rgba(80, 130, 255, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 38%);
+  background-attachment: fixed;
+}
+
+.gridlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 80%);
+  opacity: 0.5;
 }
 
 .tabnum {
   font-variant-numeric: tabular-nums;
-  font-family: "SFMono-Regular", "Consolas", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
 }
 
-h1, h2, h3 { letter-spacing: 0.01em; }
+h1, h2, h3 { letter-spacing: -0.01em; font-weight: 600; }
 
-a { color: inherit; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* Inputs */
+input[type="number"], select {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Trim the spin buttons for a cleaner numeric feel */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { opacity: 0.35; }
+
+::selection { background: var(--accent-dim); }
+
+/* Custom scrollbar (desktop) */
+@media (pointer: fine) {
+  * { scrollbar-width: thin; scrollbar-color: var(--panel-border-strong) transparent; }
+  *::-webkit-scrollbar { height: 8px; width: 8px; }
+  *::-webkit-scrollbar-thumb { background: var(--panel-border-strong); border-radius: 8px; }
+}
+
+/* Entrance animation */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
