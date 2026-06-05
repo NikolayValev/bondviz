@@ -16,21 +16,33 @@ function iso(d: Date) {
 
 export function PcaClient() {
   const [years, setYears] = useState(2);
-  const [rows, setRows] = useState<YieldRow[] | null>(null);
-  const [error, setError] = useState(false);
+  // Track which lookback each result/error belongs to so switching windows shows
+  // the loading state again (derived, rather than synchronously resetting state
+  // inside the effect) and stale in-flight responses are ignored.
+  const [loaded, setLoaded] = useState<{ years: number; rows: YieldRow[] } | null>(null);
+  const [erroredYears, setErroredYears] = useState<number | null>(null);
 
   useEffect(() => {
-    setRows(null);
-    setError(false);
+    let cancelled = false;
     const end = new Date();
     const start = new Date();
     start.setFullYear(start.getFullYear() - years);
     start.setDate(start.getDate() - 14);
     fetch(`/api/treasury/range?start=${iso(start)}&end=${iso(end)}`)
       .then((r) => r.json())
-      .then((d) => setRows(d.rows ?? []))
-      .catch(() => setError(true));
+      .then((d) => {
+        if (!cancelled) setLoaded({ years, rows: d.rows ?? [] });
+      })
+      .catch(() => {
+        if (!cancelled) setErroredYears(years);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [years]);
+
+  const rows = loaded?.years === years ? loaded.rows : null;
+  const error = erroredYears === years;
 
   const result = useMemo(() => (rows ? pca(rows, 3) : null), [rows]);
 
