@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
+import { bootstrapZeros } from "@/lib/curve";
 import { YieldRow } from "@/lib/types";
 
 const COMPARE = [
@@ -47,6 +48,12 @@ export function YieldCurveClient() {
     if (!rows || rows.length === 0) return null;
     const latest = rows[rows.length - 1];
     const latestCurve = rowToCurve(latest);
+    const boot = bootstrapZeros(latestCurve.map((p) => ({ years: p.years, yieldPct: p.yield })));
+    const bootstrapSeries: Series[] = [
+      { id: "par", label: "Par", color: "#00d68f", points: latestCurve.map((p) => [p.years, p.yield]) },
+      { id: "zero", label: "Zero", color: "#5b8def", points: boot.grid.map((t, i) => [t, boot.zero[i] * 100]) },
+      { id: "fwd", label: "Forward (6M)", color: "#f5a623", points: boot.grid.map((t, i) => [t, boot.forward[i] * 100]) },
+    ];
 
     const curveSeries: Series[] = [
       { id: "latest", label: latest.date, color: "#00d68f", points: latestCurve.map((p) => [p.years, p.yield]) },
@@ -67,7 +74,7 @@ export function YieldCurveClient() {
       { id: "3m10y", label: "3m10y", color: "#5b8def", points: threeM10Y.map(([t, v]) => [t, toBps(v)]) },
     ];
 
-    return { latest, latestCurve, curveSeries, spreadSeriesData };
+    return { latest, latestCurve, curveSeries, spreadSeriesData, bootstrapSeries };
   }, [rows]);
 
   if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
@@ -98,6 +105,21 @@ export function YieldCurveClient() {
           yLabel="Yield (%)"
           yUnit="%"
         />
+      </Card>
+
+      <Card>
+        <h2 className="mb-2 text-lg">Zero & forward curve (bootstrapped)</h2>
+        <LineChart
+          ariaLabel="Bootstrapped zero and forward curves vs par"
+          series={view.bootstrapSeries}
+          xLabel="Maturity (years)"
+          yLabel="Rate (%)"
+          yUnit="%"
+        />
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Par yields are treated as semiannual par coupons and bootstrapped into discount factors;
+          zero rates are annual-compounded, and forwards are the implied 6-month rates.
+        </p>
       </Card>
 
       <Card>
