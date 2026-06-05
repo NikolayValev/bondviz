@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/yield-curve", label: "Yield Curve" },
   { href: "/pricing", label: "Bond Pricing" },
   { href: "/portfolio", label: "Portfolio" },
+  { href: "/pca", label: "PCA" },
 ];
 
 export function Nav() {
