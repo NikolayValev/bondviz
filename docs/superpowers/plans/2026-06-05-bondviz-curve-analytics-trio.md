@@ -630,7 +630,7 @@ export function jacobiEigen(input: number[][]): { values: number[]; vectors: num
     for (let p = 0; p < n; p++) {
       for (let q = p + 1; q < n; q++) {
         if (Math.abs(a[p][q]) < 1e-300) continue;
-        const phi = 0.5 * Math.atan2(2 * a[p][q], a[p][p] - a[q][q]);
+        const phi = 0.5 * Math.atan2(2 * a[p][q], a[q][q] - a[p][p]);
         const c = Math.cos(phi);
         const s = Math.sin(phi);
         // A := Jᵀ A J
