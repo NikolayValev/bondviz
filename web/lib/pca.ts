@@ -1,5 +1,5 @@
 import { TenorLabel, TENOR_LABELS, YieldRow } from "@/lib/types";
-import { BC_TO_TENOR, TENOR_YEARS } from "@/lib/finance";
+import { BC_TO_TENOR } from "@/lib/finance";
 
 export interface PcaResult {
   tenors: TenorLabel[];
@@ -145,5 +145,3 @@ export function pca(rows: YieldRow[], k: number): PcaResult | null {
 
   return { tenors, explained, loadings, scores };
 }
-
-export { TENOR_YEARS };
