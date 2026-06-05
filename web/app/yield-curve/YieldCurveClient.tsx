@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
 import { bootstrapZeros } from "@/lib/curve";
+import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
 
 const COMPARE = [
@@ -55,6 +56,16 @@ export function YieldCurveClient() {
       { id: "fwd", label: "Forward (6M)", color: "#f5a623", points: boot.grid.map((t, i) => [t, boot.forward[i] * 100]) },
     ];
 
+    const tenorsPresent = latestCurve.map((p) => p.label);
+    const heatmap = {
+      dates: rows.map((r) => r.date),
+      tenors: tenorsPresent,
+      values: rows.map((r) => {
+        const m = new Map(rowToCurve(r).map((p) => [p.label, p.yield] as const));
+        return tenorsPresent.map((lab) => m.get(lab) ?? null);
+      }),
+    };
+
     const curveSeries: Series[] = [
       { id: "latest", label: latest.date, color: "#00d68f", points: latestCurve.map((p) => [p.years, p.yield]) },
     ];
@@ -74,7 +85,7 @@ export function YieldCurveClient() {
       { id: "3m10y", label: "3m10y", color: "#5b8def", points: threeM10Y.map(([t, v]) => [t, toBps(v)]) },
     ];
 
-    return { latest, latestCurve, curveSeries, spreadSeriesData, bootstrapSeries };
+    return { latest, latestCurve, curveSeries, spreadSeriesData, bootstrapSeries, heatmap };
   }, [rows]);
 
   if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
@@ -135,6 +146,21 @@ export function YieldCurveClient() {
         />
         <p className="mt-2 text-sm text-[var(--muted)]">
           Negative spreads indicate inversion. Lines below the dashed zero line mark inverted regimes.
+        </p>
+      </Card>
+
+      <Card>
+        <h2 className="mb-2 text-lg">Yield heatmap (time × tenor)</h2>
+        <Heatmap
+          ariaLabel="Treasury yields by tenor over time"
+          dates={view.heatmap.dates}
+          tenors={view.heatmap.tenors}
+          values={view.heatmap.values}
+        />
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Each row is a date (old → new), each column a tenor; brighter cells are higher yields.
+          Watch horizontal bands for tenor-specific moves and diagonal gradients for rolling
+          steepeners or flatteners.
         </p>
       </Card>
     </div>
