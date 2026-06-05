@@ -56,14 +56,14 @@ export function Heatmap(props: HeatmapProps) {
         }
       }
     }
-    const span = max - min || 1;
+    const span = max > min ? max - min : 1;
     return { iw, ih, cellW, cellH, min, max, span };
   }, [props.dates, props.tenors, props.values, width, height]);
 
   return (
     <div ref={ref} className="w-full">
       {content && (
-        <svg width={width} height={height} role="img" aria-label={props.ariaLabel}>
+        <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
           <g transform={`translate(${M.left},${M.top})`}>
             {props.values.map((row, di) =>
               row.map((v, ti) => (
