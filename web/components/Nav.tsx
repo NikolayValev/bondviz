@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/pricing", label: "Bond Pricing" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/pca", label: "PCA" },
+  { href: "/stocks", label: "Stocks" },
 ];
 
 export function Nav() {
