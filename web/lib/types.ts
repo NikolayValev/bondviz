@@ -19,3 +19,13 @@ export interface Kpis {
   twos10s: number | null; // percentage points (10Y - 2Y)
   threeM10Y: number | null; // percentage points (10Y - 3M)
 }
+
+export interface StockBar {
+  date: string; // ISO yyyy-mm-dd
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  vwap: number | null;
+}
