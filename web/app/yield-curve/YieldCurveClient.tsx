@@ -6,6 +6,7 @@ import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
 import { bootstrapZeros } from "@/lib/curve";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
+import { iso } from "@/lib/format";
 
 const COMPARE = [
   { label: "1M ago", months: 1, color: "#5b8def" },
@@ -13,10 +14,6 @@ const COMPARE = [
   { label: "6M ago", months: 6, color: "#e5484d" },
   { label: "1Y ago", months: 12, color: "#9b59b6" },
 ];
-
-function iso(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 function nearest(rows: YieldRow[], target: string): YieldRow | null {
   if (rows.length === 0) return null;

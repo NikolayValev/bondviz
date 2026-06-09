@@ -6,6 +6,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { ScenarioChart } from "@/components/charts/ScenarioChart";
 import { symmetricShifts, type BondParams } from "@/lib/finance";
 import { portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { money, money0, signedPct } from "@/lib/format";
 
 interface Holding {
   id: string;
@@ -28,10 +29,7 @@ const SEED: Holding[] = [
   mk("10Y Bond", 50_000, 5.0, 4.4, 10),
 ];
 
-const money = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const money0 = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}$${money(Math.abs(v))}`;
-const signedPct = (v: number) => `${v >= 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(2)}%`;
 const MAGNITUDES = [25, 50, 100, 200];
 const safe = (n: number) => (Number.isFinite(n) ? n : 0);
 

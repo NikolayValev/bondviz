@@ -21,11 +21,9 @@ import {
   solveYield,
   symmetricShifts,
 } from "@/lib/finance";
+import { money, money0, signedPct } from "@/lib/format";
 
-const money = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const money0 = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}${money(Math.abs(v))}`;
-const signedPct = (v: number) => `${v >= 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(2)}%`;
 
 function Field({
   label, unit, value, onChange, step, min, max, slider = false, disabled = false,
