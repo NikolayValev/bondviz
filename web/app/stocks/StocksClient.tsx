@@ -5,6 +5,7 @@ import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { StockBar } from "@/lib/types";
+import { iso, money, money0, signedPct } from "@/lib/format";
 
 interface CacheEntry {
   configured: boolean;
@@ -18,14 +19,6 @@ const LOOKBACKS = [
   { label: "6M", value: 6 },
   { label: "1Y", value: 12 },
 ];
-
-const money = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const vol = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
-const signedPct = (v: number) => `${v >= 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(2)}%`;
-
-function iso(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 function parseTickers(s: string): string[] {
   const seen = new Set<string>();
@@ -177,7 +170,7 @@ export function StocksClient() {
                     value={signedPct(view.pctChange)}
                     tone={view.pctChange >= 0 ? "pos" : "neg"}
                   />
-                  <Metric label="Latest volume" value={vol(view.last.volume)} />
+                  <Metric label="Latest volume" value={money0(view.last.volume)} />
                 </div>
                 <div className="mt-4">
                   <LineChart
@@ -212,7 +205,7 @@ export function StocksClient() {
                           <td className="py-1 pr-4">{money(b.high)}</td>
                           <td className="py-1 pr-4">{money(b.low)}</td>
                           <td className="py-1 pr-4">{money(b.close)}</td>
-                          <td className="py-1">{vol(b.volume)}</td>
+                          <td className="py-1">{money0(b.volume)}</td>
                         </tr>
                       ))}
                     </tbody>

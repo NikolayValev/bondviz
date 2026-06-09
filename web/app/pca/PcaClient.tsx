@@ -7,12 +7,9 @@ import { LineChart, Series } from "@/components/charts/LineChart";
 import { pca } from "@/lib/pca";
 import { TENOR_YEARS } from "@/lib/finance";
 import { YieldRow } from "@/lib/types";
+import { iso } from "@/lib/format";
 
 const COMPONENT_COLORS = ["#00d68f", "#5b8def", "#f5a623"];
-
-function iso(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 export function PcaClient() {
   const [years, setYears] = useState(2);
