@@ -5,6 +5,8 @@
 // solved in order and every prior factor already exists (no interpolation
 // of missing nodes is needed).
 
+import { interp } from "@/lib/interp";
+
 export interface ParPoint {
   years: number;
   yieldPct: number; // par yield in percent
@@ -15,19 +17,6 @@ export interface BootstrapResult {
   df: number[];      // discount factor at each grid time
   zero: number[];    // annual-compounded zero rate (decimal) at each grid time
   forward: number[]; // 6-month implied forward (annual-compounded, decimal)
-}
-
-/** Linear interpolation of y at x given sorted (xs, ys), flat-extrapolated. */
-function interp(x: number, xs: number[], ys: number[]): number {
-  if (x <= xs[0]) return ys[0];
-  if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
-  for (let i = 1; i < xs.length; i++) {
-    if (x <= xs[i]) {
-      const t = (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
-      return ys[i - 1] + (ys[i] - ys[i - 1]) * t;
-    }
-  }
-  return ys[ys.length - 1];
 }
 
 export function bootstrapZeros(par: ParPoint[]): BootstrapResult {
