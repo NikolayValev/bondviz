@@ -21,8 +21,8 @@ export function SignalClient() {
   const view = useMemo(() => {
     if (!points) return null;
     const status = currentStatus(points);
-    const episodes = inversionEpisodes(points).slice().reverse(); // most recent first
-    const forward = inversionEpisodes(points);
+    const forward = inversionEpisodes(points); // chronological
+    const episodes = forward.slice().reverse(); // most recent first
     const withRec = forward.filter((e) => e.recessionFollowed).length;
     return { status, episodes, total: forward.length, withRec };
   }, [points]);
