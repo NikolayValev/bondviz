@@ -107,6 +107,13 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 0.35; }
 }
 .rise { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* Mobile nav dropdown entrance */
+@keyframes menu-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.menu-drop { animation: menu-drop 0.18s ease-out both; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
