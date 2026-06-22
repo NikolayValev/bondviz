@@ -27,6 +27,6 @@ describe("SpreadHistoryChart", () => {
     const { container } = render(
       <SpreadHistoryChart width={800} ariaLabel="empty" points={[]} recessions={recessions} />,
     );
-    expect(container).toBeTruthy();
+    expect(container.querySelector("svg")).toBeNull();
   });
 });

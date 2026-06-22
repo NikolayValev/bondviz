@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { scaleTime, scaleLinear } from "d3-scale";
 import { line, area } from "d3-shape";
-import { extent } from "d3-array";
+import { extent, min, max } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import type { SpreadPoint, NberRecession } from "@/lib/signal";
 
@@ -36,7 +36,7 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
     const allV = [...s10.map((p) => p.v), ...s2.map((p) => p.v), 0];
     const [t0, t1] = extent(allT) as [number, number];
     const x = scaleTime().domain([t0, t1]).range([0, iw]);
-    const y = scaleLinear().domain([Math.min(...allV), Math.max(...allV)]).range([ih, 0]).nice();
+    const y = scaleLinear().domain([min(allV) ?? 0, max(allV) ?? 0]).range([ih, 0]).nice();
 
     const lineGen = line<XY>().x((p) => x(p.t)).y((p) => y(p.v));
 
