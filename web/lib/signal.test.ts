@@ -111,6 +111,27 @@ describe("inversionEpisodes", () => {
     ]);
     expect(eps[0].recessionFollowed).toBe(false);
   });
+
+  it("flags a long inversion that begins >24m before a recession but runs up to it", () => {
+    // Episode spans 2006-06 → 2007-06 (starts 18m before the 2007-12 recession but
+    // the start is within 24m here); make it start >24m out to exercise end-based lead.
+    const eps = inversionEpisodes([
+      { date: "2005-06-01", s10y3m: -0.1, s2s10s: 0 }, // start is 30m before 2007-12
+      { date: "2006-06-01", s10y3m: -0.2, s2s10s: 0 },
+      { date: "2007-06-01", s10y3m: -0.3, s2s10s: 0 }, // end is 6m before 2007-12
+    ]);
+    expect(eps).toHaveLength(1);
+    expect(eps[0].recessionFollowed).toBe(true); // measured from end, not start
+  });
+
+  it("flags an inversion that overlaps an ongoing recession", () => {
+    // 2008-03 sits inside the 2007-12 → 2009-06 recession.
+    const eps = inversionEpisodes([
+      { date: "2008-03-01", s10y3m: -0.1, s2s10s: 0 },
+      { date: "2008-03-02", s10y3m: -0.2, s2s10s: 0 },
+    ]);
+    expect(eps[0].recessionFollowed).toBe(true);
+  });
 });
 
 describe("NBER_RECESSIONS", () => {

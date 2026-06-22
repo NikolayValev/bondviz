@@ -25,6 +25,8 @@ export interface NberRecession {
   end: string;
 }
 
+// Source: NBER US business-cycle peaks→troughs (nber.org/research/business-cycle-dating).
+// Last updated 2026-06; extend when a new recession is dated.
 export const NBER_RECESSIONS: NberRecession[] = [
   { start: "1990-07-01", end: "1991-03-01" },
   { start: "2001-03-01", end: "2001-11-01" },
@@ -85,10 +87,16 @@ function monthsBetween(fromIso: string, toIso: string): number {
   return (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
 }
 
-function recessionWithin24m(episodeStart: string): boolean {
+/** A recession "follows" an inversion episode if it overlaps the episode or its
+ *  start falls within 24 months after the episode ends. Measuring lead time from
+ *  the episode END (not start) correctly flags long multi-year inversions that
+ *  begin well over 24 months before the recession but run right up to it. The
+ *  month difference is calendar-month-coarse (day-of-month is ignored). */
+function recessionFollows(episodeStart: string, episodeEnd: string): boolean {
   return NBER_RECESSIONS.some((r) => {
-    const m = monthsBetween(episodeStart, r.start);
-    return m >= 0 && m <= 24;
+    const overlaps = r.start <= episodeEnd && r.end >= episodeStart;
+    const lead = monthsBetween(episodeEnd, r.start);
+    return overlaps || (lead >= 0 && lead <= 24);
   });
 }
 
@@ -105,7 +113,7 @@ export function inversionEpisodes(points: SpreadPoint[]): InversionEpisode[] {
       end: points[endIdx].date,
       days: endIdx - runStart + 1,
       maxDepthBps: minVal * 100,
-      recessionFollowed: recessionWithin24m(start),
+      recessionFollowed: recessionFollows(start, points[endIdx].date),
     });
     runStart = -1;
     minVal = Infinity;
