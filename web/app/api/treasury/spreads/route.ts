@@ -12,12 +12,12 @@ export async function GET(req: Request) {
   try {
     const y0 = new Date(start).getUTCFullYear();
     const y1 = new Date(end).getUTCFullYear();
-    const all: YieldRow[] = [];
-    for (let y = y0; y <= y1; y++) {
-      const rows = await fetchTreasuryYear(y).catch(() => [] as YieldRow[]);
-      all.push(...rows);
-    }
-    const rows = all.filter((r) => r.date >= start && r.date <= end);
+    const years: number[] = [];
+    for (let y = y0; y <= y1; y++) years.push(y);
+    // Fetch every year concurrently — a 35-year span was 35 sequential round
+    // trips before. A failed year resolves to [] so one bad year is skipped.
+    const perYear = await Promise.all(years.map((y) => fetchTreasuryYear(y).catch(() => [] as YieldRow[])));
+    const rows = perYear.flat().filter((r) => r.date >= start && r.date <= end);
     return NextResponse.json({ points: toSpreadPoints(rows) });
   } catch {
     return NextResponse.json({ points: [] }, { status: 503 });

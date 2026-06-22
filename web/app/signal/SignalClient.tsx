@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { SpreadHistoryChart } from "@/components/charts/SpreadHistoryChart";
 import { currentStatus, inversionEpisodes, NBER_RECESSIONS, SpreadPoint } from "@/lib/signal";
-import { iso } from "@/lib/format";
+import { loadSpreads } from "@/lib/spreadsCache";
 
 const bps = (pp: number | null) => (pp === null ? "—" : `${pp >= 0 ? "+" : ""}${(pp * 100).toFixed(0)} bps`);
 
@@ -12,9 +12,8 @@ export function SignalClient() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/treasury/spreads?start=1990-01-01&end=${iso(new Date())}`)
-      .then((r) => r.json())
-      .then((d) => setPoints(d.points ?? []))
+    loadSpreads()
+      .then(setPoints)
       .catch(() => setError(true));
   }, []);
 

@@ -38,7 +38,11 @@ export function parseTreasuryXml(xml: string): YieldRow[] {
 }
 
 export async function fetchTreasuryYear(year: number): Promise<YieldRow[]> {
-  const res = await fetch(TREASURY_URL(year), { next: { revalidate: 3600 } });
+  // Past years are settled history and effectively never change, so cache them
+  // for a week; only the current year still moves, so keep it on the hourly TTL.
+  const isPastYear = year < new Date().getUTCFullYear();
+  const revalidate = isPastYear ? 60 * 60 * 24 * 7 : 3600;
+  const res = await fetch(TREASURY_URL(year), { next: { revalidate } });
   if (!res.ok) throw new Error(`Treasury feed ${year} returned ${res.status}`);
   return parseTreasuryXml(await res.text());
 }
