@@ -56,7 +56,7 @@ export function toSpreadPoints(rows: Record<string, unknown>[]): SpreadPoint[] {
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
-const isInverted = (v: number | null): boolean => v !== null && v <= 0;
+const isInverted = (v: number | null): v is number => v !== null && v <= 0;
 
 /** Latest values plus the trailing consecutive-inverted streak. */
 export function currentStatus(points: SpreadPoint[]): SignalStatus {
@@ -115,7 +115,7 @@ export function inversionEpisodes(points: SpreadPoint[]): InversionEpisode[] {
     const v = points[i].s10y3m;
     if (isInverted(v)) {
       if (runStart === -1) runStart = i;
-      if ((v as number) < minVal) minVal = v as number;
+      if (v < minVal) minVal = v;
     } else if (runStart !== -1) {
       close(i - 1);
     }
