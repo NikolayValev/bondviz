@@ -55,7 +55,10 @@ export function carryRollDown(curve: CurveInput[], horizonYears: number): CarryP
   for (const p of clean) {
     if (p.years <= h + eps) continue;
     const rollMat = p.years - h;
-    if (rollMat < xs[0]) continue; // exclude if rolled maturity is before the curve
+    // A tenor whose rolled maturity falls below the curve's shortest point has no
+    // curve data to roll down to (flat-extrapolation would yield zero roll), so
+    // exclude it rather than report a degenerate zero roll-down.
+    if (rollMat < xs[0]) continue;
     const yT = p.yieldPct / 100;
     const yRoll = interp(rollMat, xs, ys) / 100;
 
