@@ -4,6 +4,7 @@ import { Metric } from "@/components/ui/Metric";
 import { computeCurveKpis, toBps } from "@/lib/finance";
 import { fetchTreasuryYear } from "@/lib/treasury";
 import { Kpis } from "@/lib/types";
+import { PrefetchSignal } from "./PrefetchSignal";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function Home() {
   const { kpis, date } = await getKpis();
   return (
     <div className="space-y-10">
+      <PrefetchSignal />
       <section className="rise">
         <div className="eyebrow">Fixed-income research terminal</div>
         <h1 className="mt-2 text-5xl font-bold tracking-tight sm:text-6xl">
