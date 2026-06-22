@@ -82,6 +82,14 @@ export default async function Home() {
             <p className="mt-2 text-sm text-[var(--muted)]">Horizon carry, roll-down and breakeven cushion across the curve.</p>
           </Card>
         </Link>
+        <Link href="/signal" className="group">
+          <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
+            <h3 className="flex items-center justify-between text-[var(--accent)]">
+              Recession Signal <span className="transition-transform group-hover:translate-x-1">→</span>
+            </h3>
+            <p className="mt-2 text-sm text-[var(--muted)]">Curve inversion vs NBER recessions since 1990, with episode history.</p>
+          </Card>
+        </Link>
       </section>
     </div>
   );
