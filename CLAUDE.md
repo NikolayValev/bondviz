@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **⚠️ Orientation:** The **active product is the Next.js app in [`web/`](web/)** (deployed to
+> Vercel). Everything below this banner describes the **legacy Python/Streamlit app**, which is now
+> a frozen numerical reference that `web/lib/*.ts` was ported from. For current work, start with
+> **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** and the rest of **[docs/](docs/README.md)**
+> (design system, backlog, bugs), and follow **[web/CLAUDE.md](web/CLAUDE.md)** when in `web/`.
+
 ## Commands
 
 Setup, run, and dev helpers are Windows `.bat` wrappers in `scripts/win/` (Unix equivalents in `scripts/unix/`). They all `cd` to the repo root, require `.venv\Scripts\python.exe`, and export `PYTHONPATH=%CD%\src` before invoking Python.
