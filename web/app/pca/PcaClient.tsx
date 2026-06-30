@@ -6,10 +6,11 @@ import { Segmented } from "@/components/ui/Segmented";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { pca } from "@/lib/pca";
 import { TENOR_YEARS } from "@/lib/finance";
+import { SERIES } from "@/lib/chartColors";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
 
-const COMPONENT_COLORS = ["#00d68f", "#5b8def", "#f5a623"];
+const COMPONENT_COLORS = [SERIES[0], SERIES[1], SERIES[2]];
 
 export function PcaClient() {
   const [years, setYears] = useState(2);
