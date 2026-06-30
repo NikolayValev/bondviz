@@ -5,6 +5,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { carryRollDown, CarryPoint } from "@/lib/carry";
 import { rowToCurve } from "@/lib/finance";
+import { SERIES } from "@/lib/chartColors";
 import { iso } from "@/lib/format";
 import { YieldRow } from "@/lib/types";
 
@@ -74,8 +75,8 @@ export function CarryClient() {
           yUnit=" bps"
           categories={cats}
           series={[
-            { id: "carry", label: "Carry", color: "var(--accent)", values: view.points.map((p) => p.carryBps) },
-            { id: "roll", label: "Roll-down", color: "#5b8def", values: view.points.map((p) => p.rollBps) },
+            { id: "carry", label: "Carry", color: SERIES[0], values: view.points.map((p) => p.carryBps) },
+            { id: "roll", label: "Roll-down", color: SERIES[1], values: view.points.map((p) => p.rollBps) },
           ]}
         />
         <p className="mt-2 text-sm text-[var(--muted)]">{summarize(view.points, horizonLabel)}</p>

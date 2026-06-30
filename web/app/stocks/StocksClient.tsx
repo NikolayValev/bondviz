@@ -6,6 +6,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { StockBar } from "@/lib/types";
 import { iso, money, money0, signedPct } from "@/lib/format";
+import { SERIES } from "@/lib/chartColors";
 
 interface CacheEntry {
   configured: boolean;
@@ -84,7 +85,7 @@ export function StocksClient() {
       {
         id: "close",
         label: "Close",
-        color: "#00d68f",
+        color: SERIES[0],
         points: bars.map((b) => [new Date(b.date).getTime(), b.close] as [number, number]),
       },
     ];

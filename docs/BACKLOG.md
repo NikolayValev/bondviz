@@ -34,7 +34,7 @@
 - **Acceptance:** workflow green on a trivial PR; a deliberately failing test fails the job.
 - **Atomic:** single-file task; no split needed.
 
-### FEAT-2 · Tokenize chart series colors — **M** *(also BUG-7; unblocks design system)*
+### FEAT-2 · Tokenize chart series colors — **M** — ✅ DONE (`feat/design-tokens`) *(also BUG-7; unblocks design system)*
 
 - **Goal:** no raw hex in chart/series code; one palette module driven by CSS vars.
 - **Files:** new `web/lib/chartColors.ts`; `web/app/globals.css`; edit `YieldCurveClient`,
@@ -55,7 +55,7 @@
   - **FEAT-2e** — `SpreadHistoryChart.tsx` `#5b8def` → token.
   - **FEAT-2f** — `Heatmap.tsx` `STOPS` → `HEATMAP_STOPS`.
 
-### FEAT-3 · Map CSS vars into Tailwind v4 `@theme` — **S** *(unblocks design system)*
+### FEAT-3 · Map CSS vars into Tailwind v4 `@theme` — **S** — ✅ DONE (`feat/design-tokens`) *(unblocks design system)*
 
 - **Goal:** allow semantic utilities (`bg-panel`, `text-muted`, `border-accent`) instead of
   `bg-[var(--panel)]` everywhere.

@@ -48,7 +48,7 @@ export function Segmented<T extends string | number>({
             onClick={() => toggle(o.value)}
             className={`tabnum rounded-full px-3 py-1.5 text-sm transition-all ${
               on
-                ? "bg-[var(--accent)] font-semibold text-[#04150f] shadow-[0_0_0_1px_rgba(0,214,143,0.4)]"
+                ? "bg-[var(--accent)] font-semibold text-[var(--on-accent)] shadow-[0_0_0_1px_var(--accent-ring)]"
                 : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
             }`}
           >

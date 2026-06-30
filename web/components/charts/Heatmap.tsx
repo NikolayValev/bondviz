@@ -1,14 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
-
-// Three-stop ramp: deep navy (low) → teal → accent green (high). Hand-rolled
-// to avoid pulling in d3-scale-chromatic.
-const STOPS: [number, number, number][] = [
-  [13, 27, 42],
-  [27, 94, 110],
-  [0, 214, 143],
-];
+import { HEATMAP_STOPS as STOPS } from "@/lib/chartColors";
 
 export function colorRamp(t: number): string {
   const tc = Math.max(0, Math.min(1, Number.isFinite(t) ? t : 0));
