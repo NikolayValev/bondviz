@@ -133,7 +133,7 @@
   - **FEAT-8b** — shock selector + overlay shocked curve in `YieldCurveClient`.
   - **FEAT-8c** — reprice a sample bond on the shocked curve via `scenarioShift`.
 
-### FEAT-9 · `/styleguide` component catalog — **S** *(supports design-system work)*
+### FEAT-9 · `/styleguide` component catalog — **S** — ✅ DONE (`feat/styleguide`) *(supports design-system work)*
 
 - **Goal:** one page rendering every `ui/*` primitive and chart in all states — the design
   iteration surface for the new system.
