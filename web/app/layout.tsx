@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="relative z-10">
           <Nav />
           <main className="mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-10">{children}</main>
-          <footer className="mx-auto max-w-6xl px-5 pb-10 pt-4 text-xs text-[var(--faint)] sm:px-6">
+          <footer className="mx-auto max-w-6xl px-5 pb-10 pt-4 text-xs text-faint sm:px-6">
             BondViz · continuous-compounding analytics · data: U.S. Treasury
           </footer>
         </div>

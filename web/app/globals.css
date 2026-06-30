@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+/* Register the palette as Tailwind theme tokens so components can use semantic
+ * utilities (bg-panel, text-muted, border-accent) instead of bg-[var(--panel)].
+ * Both forms work; migrate incrementally. Values reference the :root vars below
+ * so a theme swap flows through automatically. */
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-warn: var(--warn);
+}
+
 :root {
   /* Surfaces */
   --bg: #070a10;
