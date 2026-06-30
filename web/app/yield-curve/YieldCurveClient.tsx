@@ -4,15 +4,16 @@ import { Card } from "@/components/ui/Card";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
 import { bootstrapZeros } from "@/lib/curve";
+import { SERIES } from "@/lib/chartColors";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
 
 const COMPARE = [
-  { label: "1M ago", months: 1, color: "#5b8def" },
-  { label: "3M ago", months: 3, color: "#f5a623" },
-  { label: "6M ago", months: 6, color: "#e5484d" },
-  { label: "1Y ago", months: 12, color: "#9b59b6" },
+  { label: "1M ago", months: 1, color: SERIES[1] },
+  { label: "3M ago", months: 3, color: SERIES[2] },
+  { label: "6M ago", months: 6, color: SERIES[3] },
+  { label: "1Y ago", months: 12, color: SERIES[4] },
 ];
 
 function nearest(rows: YieldRow[], target: string): YieldRow | null {
@@ -48,9 +49,9 @@ export function YieldCurveClient() {
     const latestCurve = rowToCurve(latest);
     const boot = bootstrapZeros(latestCurve.map((p) => ({ years: p.years, yieldPct: p.yield })));
     const bootstrapSeries: Series[] = [
-      { id: "par", label: "Par", color: "#00d68f", points: latestCurve.map((p) => [p.years, p.yield]) },
-      { id: "zero", label: "Zero", color: "#5b8def", points: boot.grid.map((t, i) => [t, boot.zero[i] * 100]) },
-      { id: "fwd", label: "Forward (6M)", color: "#f5a623", points: boot.grid.map((t, i) => [t, boot.forward[i] * 100]) },
+      { id: "par", label: "Par", color: SERIES[0], points: latestCurve.map((p) => [p.years, p.yield]) },
+      { id: "zero", label: "Zero", color: SERIES[1], points: boot.grid.map((t, i) => [t, boot.zero[i] * 100]) },
+      { id: "fwd", label: "Forward (6M)", color: SERIES[2], points: boot.grid.map((t, i) => [t, boot.forward[i] * 100]) },
     ];
 
     const tenorsPresent = latestCurve.map((p) => p.label);
@@ -64,7 +65,7 @@ export function YieldCurveClient() {
     };
 
     const curveSeries: Series[] = [
-      { id: "latest", label: latest.date, color: "#00d68f", points: latestCurve.map((p) => [p.years, p.yield]) },
+      { id: "latest", label: latest.date, color: SERIES[0], points: latestCurve.map((p) => [p.years, p.yield]) },
     ];
     for (const c of COMPARE) {
       const target = new Date(latest.date);
@@ -78,8 +79,8 @@ export function YieldCurveClient() {
 
     const { twos10s, threeM10Y } = spreadSeries(rows);
     const spreadSeriesData: Series[] = [
-      { id: "2s10s", label: "2s10s", color: "#00d68f", points: twos10s.map(([t, v]) => [t, toBps(v)]) },
-      { id: "3m10y", label: "3m10y", color: "#5b8def", points: threeM10Y.map(([t, v]) => [t, toBps(v)]) },
+      { id: "2s10s", label: "2s10s", color: SERIES[0], points: twos10s.map(([t, v]) => [t, toBps(v)]) },
+      { id: "3m10y", label: "3m10y", color: SERIES[1], points: threeM10Y.map(([t, v]) => [t, toBps(v)]) },
     ];
 
     return { latest, latestCurve, curveSeries, spreadSeriesData, bootstrapSeries, heatmap };
