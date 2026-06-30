@@ -4,6 +4,7 @@ import { scaleTime, scaleLinear } from "d3-scale";
 import { line, area } from "d3-shape";
 import { extent, min, max } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { SERIES } from "@/lib/chartColors";
 import type { SpreadPoint, NberRecession } from "@/lib/signal";
 
 export interface SpreadHistoryChartProps {
@@ -91,14 +92,14 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
             {/* zero baseline */}
             <line x1={0} x2={c.iw} y1={c.zeroY} y2={c.zeroY} stroke="var(--panel-border-strong)" strokeDasharray="3 3" />
             {/* series */}
-            <path className="series-2s10s" d={c.lineGen(c.s2) ?? ""} fill="none" stroke="#5b8def" strokeWidth={1.5} opacity={0.85} />
+            <path className="series-2s10s" d={c.lineGen(c.s2) ?? ""} fill="none" stroke={SERIES[1]} strokeWidth={1.5} opacity={0.85} />
             <path className="series-10y3m" d={c.lineGen(c.s10) ?? ""} fill="none" stroke="var(--accent)" strokeWidth={2} />
           </g>
         </svg>
       )}
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded bg-[var(--accent)]" /> 10y–3m</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded" style={{ background: "#5b8def" }} /> 2s10s</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded" style={{ background: SERIES[1] }} /> 2s10s</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm bg-[var(--neg)] opacity-30" /> inverted</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm bg-[var(--muted)] opacity-30" /> NBER recession</span>
       </div>
