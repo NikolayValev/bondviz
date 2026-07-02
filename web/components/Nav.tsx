@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/portfolio", label: "Portfolio" },
   { href: "/pca", label: "PCA" },
   { href: "/stocks", label: "Stocks" },
+  { href: "/command-panel", label: "Command" },
 ];
 
 export function Nav() {
