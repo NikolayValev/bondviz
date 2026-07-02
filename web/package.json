@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.6",
+    "@ai-sdk/react": "^4.0.15",
     "@nikolayvalev/command-panel": "^1.0.0",
     "@nikolayvalev/design-system": "^2.1.0",
+    "ai": "^7.0.14",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
