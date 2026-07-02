@@ -63,7 +63,10 @@ web/
 │   ├── PrefetchSignal.tsx    # warms the 35-yr spread cache on idle from Home
 │   ├── <route>/page.tsx      # server wrapper (metadata only)
 │   ├── <route>/<Name>Client.tsx   # the actual page (client component)
+│   ├── command-panel/data.ts # DataRegistry: the only metrics chat-generated widgets can read
 │   └── api/
+│       ├── command-panel/route.ts      # POST chat → streamed widget proposals (GitHub Models)
+│       ├── command-panel/data/route.ts # POST read-only metric loads backing widget useMetric()
 │       ├── treasury/latest/route.ts    # GET → latest par-yield row
 │       ├── treasury/range/route.ts     # GET ?start&end → daily rows in window
 │       ├── treasury/spreads/route.ts   # GET ?start&end → slim spread points (parallel fetch)
@@ -87,7 +90,8 @@ web/
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
 │                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test
-├── globals/config            # next.config.ts (empty), vercel.json, tsconfig.json, eslint.config.mjs,
+├── globals/config            # next.config.ts (serverExternalPackages: command-panel), vercel.json,
+│                             # tsconfig.json, eslint.config.mjs,
 │                             # vitest.config.ts, postcss.config.mjs
 └── CLAUDE.md / AGENTS.md     # agent rules (AGENTS.md warns: Next 16 ≠ training-data Next)
 ```
@@ -106,6 +110,7 @@ web/
 | `/portfolio` | `PortfolioClient` | `portfolio`, `finance` | none (user-entered bonds) | ScenarioChart |
 | `/pca` | `PcaClient` | `pca`, `finance` | `/api/treasury/range` (1–5yr) | LineChart ×2 |
 | `/stocks` | `StocksClient` | `polygon` types | `/api/stocks/aggregates` | LineChart |
+| `/command-panel` | `CommandPanelClient` (browser-only mount) | registry in `command-panel/data.ts` → `treasury`, `finance`, `curve`, `carry`, `signal` | `/api/command-panel` (chat, needs `GITHUB_MODELS_TOKEN`) + `/api/command-panel/data` | LLM-proposed widgets (`@nikolayvalev/command-panel`; see `docs/DECISIONS-command-panel.md`) |
 
 ---
 

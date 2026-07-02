@@ -1,4 +1,10 @@
 @import "tailwindcss";
+/* Command-panel widgets are built from @nikolayvalev/design-system components:
+ * editorial.css supplies their vde/chart tokens, and @source makes Tailwind
+ * scan the packages' dist for the utility classes they emit. */
+@import "@nikolayvalev/design-system/styles/editorial.css";
+@source "../node_modules/@nikolayvalev/design-system/dist";
+@source "../node_modules/@nikolayvalev/command-panel/dist";
 
 /* Register the palette as Tailwind theme tokens so components can use semantic
  * utilities (bg-panel, text-muted, border-accent) instead of bg-[var(--panel)].
