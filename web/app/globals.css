@@ -153,3 +153,69 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 0.35; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Command panel ──────────────────────────────────────────────────────────
+ * Skin @nikolayvalev/design-system (the chat-generated widgets) with the page
+ * palette by overriding its token families — the vde tokens its components
+ * read, the shadcn-style aliases the command-panel chrome reads, and the
+ * chart series colors. Declared after the imports so these win the cascade.
+ * BondViz's own --muted (text gray) and --accent (brand green) already occupy
+ * those names; the design-system meaning is preserved via the *-foreground
+ * and vde equivalents, so they are deliberately NOT remapped here. */
+:root {
+  --vde-color-background: var(--bg);
+  --vde-color-foreground: var(--text);
+  --vde-color-surface: var(--panel);
+  --vde-color-surface-foreground: var(--text);
+  --vde-color-accent: var(--accent);
+  --vde-color-accent-foreground: var(--on-accent);
+  --vde-color-secondary: var(--panel-2);
+  --vde-color-secondary-foreground: var(--text);
+  --vde-color-muted: var(--panel-2);
+  --vde-color-muted-foreground: var(--muted);
+  --vde-color-border: var(--panel-border);
+  --vde-color-input: var(--panel-border-strong);
+  --vde-color-ring: var(--accent-ring);
+  --vde-color-danger: var(--neg);
+  --vde-font-body: var(--font-sans);
+  --vde-font-display: var(--font-sans);
+  --vde-font-mono: var(--font-mono);
+  --vde-boundary-radius: 10px;
+  --vde-shadow-ambient: none;
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--panel);
+  --card-foreground: var(--text);
+  --popover: var(--panel-2);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: var(--on-accent);
+  --secondary: var(--panel-2);
+  --secondary-foreground: var(--text);
+  --muted-foreground: var(--muted);
+  --destructive: var(--neg);
+  --destructive-foreground: var(--text);
+  --border: var(--panel-border);
+  --input: var(--panel-border-strong);
+  --ring: var(--accent-ring);
+
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--series-3);
+  --chart-4: var(--series-4);
+  --chart-5: var(--series-5);
+}
+
+/* Dashboard grid: single column on small screens; a 12-column grid from sm up
+ * where each widget spans --cp-span columns (set inline, resize-persisted). */
+.cp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-content: start;
+}
+@media (min-width: 640px) {
+  .cp-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .cp-grid > .cp-item { grid-column: span var(--cp-span, 6); }
+}

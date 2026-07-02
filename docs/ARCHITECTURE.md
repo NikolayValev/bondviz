@@ -83,6 +83,7 @@ web/
 │   ├── treasury.ts           # fetch + parse Treasury XML (fast-xml-parser)
 │   ├── polygon.ts            # fetch + parse Polygon aggregates
 │   ├── spreadsCache.ts       # in-memory promise cache for the deep spread series
+│   ├── panelLayout.ts        # command-panel dashboard grid math (span/height clamp, persist)
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + mobile hamburger (the LINKS array is the menu)

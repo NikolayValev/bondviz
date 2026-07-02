@@ -10,8 +10,10 @@ const Panel = dynamic(() => import("./PanelMount"), {
 });
 
 export function CommandPanelClient() {
+  // Fixed height (viewport minus nav/footer chrome) on desktop so the chat and
+  // dashboard scroll independently; natural page flow on small screens.
   return (
-    <div className="rise" style={{ height: "calc(100dvh - 12rem)", minHeight: "480px" }}>
+    <div className="rise lg:h-[calc(100dvh-11rem)] lg:min-h-[480px]">
       <Panel />
     </div>
   );

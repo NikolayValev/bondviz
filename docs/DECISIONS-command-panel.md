@@ -47,3 +47,31 @@ Every deviation from, or interpretation of, the task spec is recorded here.
 - **Not verified end-to-end:** an actual LLM widget proposal + pin (blocked on the token above).
   Once the token is set: open `/command-panel`, send “chart the treasury yield curve”, pin the
   widget, reload — the dashboard restores from `localStorage` (`command-panel:pinned`).
+
+---
+
+## Iteration 2 (2026-07-02) — UX fixes: persistence, layout, drag/resize, palette
+
+User feedback after trying the deployed panel: (a) chat disappears on refresh, (b) widgets run
+the full length of the page, (c) wants drag-and-drop, resizable widgets, and the page's palette.
+
+| # | Decision | Why |
+| --- | --- | --- |
+| 16 | **Diagnosis.** Stock `ChatPane` holds messages only in `useChat` memory — any refresh wipes them. Stock `DashboardGrid` uses `auto-fill minmax(280px,1fr)` with **no scroll containment** — one widget fills the whole row and tall widgets stretch the page. `editorial.css` is a **light** theme (white `--vde-color-surface` etc. on our dark page). | Read from the package dist (`dist/index.js`) directly. |
+| 17 | **Recomposed the panel from the package's exported parts** (`DataResolverProvider`, `PinnedStoreProvider`, `WidgetRenderer`, `WidgetErrorBoundary`, `WidgetPreviewCard`, `usePinnedStore`) instead of the stock `<CommandPanel>`; endpoints unchanged. | The stock component can't be configured for any of the three requests; the package explicitly exports the pieces for custom composition. |
+| 18 | **Chat persists** in `localStorage` (`command-panel:chat:v1`): seeded via `useChat({ messages })`, saved when a turn settles (`status` = ready/error), capped at 40 messages, plus a Clear button. Added `ai` + `@ai-sdk/react` as direct deps (were transitive). | Fixes bug (a) without a server database; matches how pinned widgets already persist. Cap avoids storage-quota creep. |
+| 19 | **Custom dashboard grid**: 12 columns (single column < 640px), each widget `{ span: 3–12, h: 200–800px }` persisted in `command-panel:layout:v1` (pruned to pinned ids on save). Header = HTML5 drag handle reordering via the package store's `reorder`; ↑/↓ buttons kept for keyboard access; bottom-right pointer-drag handle resizes, snapping spans to columns. Pure math in `web/lib/panelLayout.ts` (+7 Vitest tests). | Fixes bug (b) (spans + own `overflow-y` container) and delivers drag + resize with zero new dependencies, matching the repo's hand-rolled-D3 ethos and the pure-&-tested `lib/` rule. |
+| 20 | **Palette**: `globals.css` now overrides all three token families the widgets read — `--vde-color-*`, the shadcn-style aliases (`--card`, `--muted-foreground`, …), and `--chart-1..5 → --series-1..5`. **`--muted` and `--accent` are deliberately not remapped** — BondViz already owns those names app-wide (text gray / brand green); the design-system's meanings are covered via the `*-foreground` and vde equivalents. | Fixes (c) “take the palette of the page”: dark panels, IBM Plex, brand green accent, BondViz chart series colors — theme swaps still flow through automatically. |
+| 21 | **Two-pane layout**: desktop = fixed-height `380px / 1fr` grid columns (viewport minus chrome), each pane scrolling independently; mobile stacks with the chat at 65dvh. | Chat stays visible regardless of dashboard height — the other half of bug (a)'s “not displayed”. |
+| 22 | **Resize is pointer-only** for now (reorder and remove are keyboard-accessible). | Known gap, noted; keyboard resize would need span/height arrow-key handling — add if asked. |
+
+### Verification (iteration 2)
+
+- `npm test` — **116/116 pass** (7 new for `panelLayout`); `npx eslint .` — clean; `npm run build` — green.
+- Dev smoke: `/command-panel` → 200; compiled dev CSS contains `.cp-grid`, the
+  `--vde-color-background: var(--bg)` override, and `--chart-1: var(--series-1)`; data route
+  returns live KPIs.
+- **Still not verified locally:** a live LLM turn — `GITHUB_MODELS_TOKEN` remains empty in
+  `web/.env.local` (the deployed Vercel site has it, which is presumably where the feedback came
+  from). Drag/resize/persistence need a real browser session: reload after chatting (history
+  restores), pin two widgets, drag one by its header, resize via the corner handle, reload again.
