@@ -6,6 +6,7 @@ import {
   WidgetRenderer,
   usePinnedStore,
   type ComponentRegistry,
+  type PinnedWidget,
 } from "@nikolayvalev/command-panel";
 import {
   DEFAULT_LAYOUT,
@@ -29,7 +30,13 @@ function saveLayouts(layouts: Record<string, WidgetLayout>, pinnedIds: string[])
   }
 }
 
-export function DashboardPanel({ registry }: { registry: ComponentRegistry }) {
+export function DashboardPanel({
+  registry,
+  onImprove,
+}: {
+  registry: ComponentRegistry;
+  onImprove?: (widget: PinnedWidget) => void;
+}) {
   const { widgets, unpin, reorder } = usePinnedStore();
   const [layouts, setLayouts] = React.useState<Record<string, WidgetLayout>>(() =>
     parseLayouts(localStorage.getItem(LAYOUT_KEY)),
@@ -122,6 +129,17 @@ export function DashboardPanel({ registry }: { registry: ComponentRegistry }) {
                 ⠿
               </span>
               <h3 className="min-w-0 flex-1 truncate text-sm font-medium">{widget.title}</h3>
+              {onImprove && (
+                <button
+                  type="button"
+                  aria-label={`Improve ${widget.title} in chat`}
+                  title="Improve in chat"
+                  onClick={() => onImprove(widget)}
+                  className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--accent)]"
+                >
+                  ✦
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Move up"

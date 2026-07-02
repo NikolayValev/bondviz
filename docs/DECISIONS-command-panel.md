@@ -75,3 +75,27 @@ the full length of the page, (c) wants drag-and-drop, resizable widgets, and the
   `web/.env.local` (the deployed Vercel site has it, which is presumably where the feedback came
   from). Drag/resize/persistence need a real browser session: reload after chatting (history
   restores), pin two widgets, drag one by its header, resize via the corner handle, reload again.
+
+---
+
+## Iteration 3 (2026-07-02) — multiple conversations + “improve this widget” in chat
+
+User requests: (a) keep chat history in **separate conversations for different workflows**;
+(b) **send a pinned widget back into the chat** so the LLM can improve it / suggest additions.
+
+| # | Decision | Why |
+| --- | --- | --- |
+| 23 | **Conversation model:** an index (`command-panel:chats:v1` → active id + `{id, title, updatedAt}` list) plus one message-history key per conversation (`command-panel:chat:<id>:v1`). Pure logic in `web/lib/chatStore.ts` (+14 Vitest tests); storage I/O stays in the component. | Per-conversation keys keep each history small and independently evictable; the pure/tested split is the repo's `lib/` rule. |
+| 24 | **Switcher UI** in the chat header: a `<select>` of conversations + new (＋) / rename (✎) / delete (✕) buttons. Switching remounts the chat session (`key={id}`) seeded from that conversation's stored messages. Fresh conversations auto-title from their first user message; rename is inline; delete confirms via `window.confirm` and activates the most recently updated survivor (never zero conversations — a fresh one is created if the last is deleted). | Remount-by-key avoids depending on AI SDK internals for resetting `useChat` state. Auto-titles make workflows recognizable without forcing naming. |
+| 25 | **Caps:** 20 conversations (creating beyond that evicts the least recently updated, deleting its messages) and 40 stored messages each. The iteration-2 single history (`command-panel:chat:v1`) is migrated into the first conversation once, with a derived title. | Bounds localStorage growth; migration preserves what the user already has. |
+| 26 | **The pinned dashboard stays shared across conversations.** | Pins are the deliberately-kept artifacts; conversations are exploration streams. Per-workflow dashboards would make widgets “disappear” when switching chats. Easy follow-up if wanted: per-conversation `createPinnedStore({ storageKey })`. |
+| 27 | **“Improve in chat” (✦ button on each widget header)** attaches that widget to the chat composer: a removable chip shows above the input, the input is pre-filled with “What would improve this widget? What else could I add to it?” (editable — type your own instruction instead), and on send the widget's JSX + data sources are appended to the message in a fenced block. The model, which has the `propose_widget` tool and the component/data vocabulary in its system prompt, proposes the revised widget, pinnable like any other. | Covers both asks — “tell the LLM to improve it” and “ask what more I can add” — with zero server/package changes: the widget context simply travels inside the user message. |
+| 28 | **Attach state adjusts during render (nonce-guarded), not in an effect** — `react-hooks/set-state-in-effect` flagged the effect version; the render-phase “derive state from props” pattern is the documented alternative. The nonce is seeded on mount so a conversation switch doesn't replay an old improve request. Only `focus()` stays in an effect. | ESLint-clean and avoids a cascading re-render. |
+
+### Verification (iteration 3)
+
+- `npm test` — **130/130 pass** (14 new for `chatStore`); `npx eslint .` — clean; `npm run build` — green.
+- Dev smoke: `/command-panel` → 200, data route → 200.
+- Browser-level flows (conversation switching, improve-attach, live LLM turn) still need the
+  deployed site or a local `GITHUB_MODELS_TOKEN`: create two conversations, chat in each, switch
+  and reload (histories separate), press ✦ on a pinned widget, send, pin the improved proposal.
