@@ -8,28 +8,14 @@ import {
   type ComponentRegistry,
   type PinnedWidget,
 } from "@nikolayvalev/command-panel";
-import {
-  DEFAULT_LAYOUT,
-  parseLayouts,
-  pruneLayouts,
-  resizeLayout,
-  type WidgetLayout,
-} from "@/lib/panelLayout";
+import { DEFAULT_LAYOUT, resizeLayout, type WidgetLayout } from "@/lib/panelLayout";
+import { loadLayouts, saveLayouts } from "./layoutStorage";
+import { ghostBtn } from "./panelChrome";
 
 // Replaces the package's DashboardGrid: 12-column grid with per-widget column
 // span + height (persisted), header drag-to-reorder (↑/↓ buttons kept for
 // keyboard), a corner resize handle, and its own scroll containment so tall
 // widgets can't stretch the page.
-const LAYOUT_KEY = "command-panel:layout:v1";
-
-function saveLayouts(layouts: Record<string, WidgetLayout>, pinnedIds: string[]) {
-  try {
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify(pruneLayouts(layouts, pinnedIds)));
-  } catch {
-    /* storage unavailable — sizes just won't persist */
-  }
-}
-
 export function DashboardPanel({
   registry,
   onImprove,
@@ -38,9 +24,7 @@ export function DashboardPanel({
   onImprove?: (widget: PinnedWidget) => void;
 }) {
   const { widgets, unpin, reorder } = usePinnedStore();
-  const [layouts, setLayouts] = React.useState<Record<string, WidgetLayout>>(() =>
-    parseLayouts(localStorage.getItem(LAYOUT_KEY)),
-  );
+  const [layouts, setLayouts] = React.useState<Record<string, WidgetLayout>>(loadLayouts);
   const [dragIdx, setDragIdx] = React.useState<number | null>(null);
   const [overIdx, setOverIdx] = React.useState<number | null>(null);
   const gridRef = React.useRef<HTMLDivElement | null>(null);
@@ -135,7 +119,7 @@ export function DashboardPanel({
                   aria-label={`Improve ${widget.title} in chat`}
                   title="Improve in chat"
                   onClick={() => onImprove(widget)}
-                  className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--accent)]"
+                  className={`${ghostBtn} hover:text-[var(--accent)]`}
                 >
                   ✦
                 </button>
@@ -145,7 +129,7 @@ export function DashboardPanel({
                 aria-label="Move up"
                 disabled={i === 0}
                 onClick={() => reorder(i, i - 1)}
-                className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] disabled:opacity-30"
+                className={`${ghostBtn} hover:text-[var(--text)]`}
               >
                 ↑
               </button>
@@ -154,7 +138,7 @@ export function DashboardPanel({
                 aria-label="Move down"
                 disabled={i === widgets.length - 1}
                 onClick={() => reorder(i, i + 1)}
-                className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] disabled:opacity-30"
+                className={`${ghostBtn} hover:text-[var(--text)]`}
               >
                 ↓
               </button>
@@ -162,7 +146,7 @@ export function DashboardPanel({
                 type="button"
                 aria-label={`Remove ${widget.title}`}
                 onClick={() => unpin(widget.id)}
-                className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--neg)]"
+                className={`${ghostBtn} hover:text-[var(--neg)]`}
               >
                 ✕
               </button>

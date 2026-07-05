@@ -32,7 +32,7 @@ export function CashflowChart({ data, duration }: { data: DiscountedCashflow[]; 
   const hovered = c && hover != null ? data[hover] : null;
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {c && (
         <svg width={width} height={height} role="img" aria-label="Discounted cashflows over time with the duration center of mass" className="overflow-visible" onMouseLeave={() => setHover(null)}>
           <g transform={`translate(${M.left},${M.top})`}>

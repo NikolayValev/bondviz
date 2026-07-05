@@ -50,7 +50,7 @@ export function PriceYieldChart({
   const hovered = c && hover != null ? curve[hover] : null;
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {c && (
         <svg
           width={width}

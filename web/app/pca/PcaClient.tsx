@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { pca } from "@/lib/pca";
 import { TENOR_YEARS } from "@/lib/finance";
@@ -82,7 +83,11 @@ export function PcaClient() {
       </p>
 
       {error && <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>}
-      {!error && !rows && <p className="text-[var(--muted)]">Loading Treasury data…</p>}
+      {!error && !rows && (
+        <div role="status" aria-label="Loading Treasury data">
+          <Skeleton className="h-80" />
+        </div>
+      )}
       {!error && rows && !result && (
         <p className="text-[var(--muted)]">Not enough complete data in this window to run PCA.</p>
       )}

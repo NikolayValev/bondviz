@@ -8,8 +8,9 @@ import {
   defaultComponentRegistry,
   type PinnedWidget,
 } from "@nikolayvalev/command-panel";
-import { ChatPanel, type ImproveRequest } from "./ChatPanel";
+import { ChatPanel } from "./ChatPanel";
 import { DashboardPanel } from "./DashboardPanel";
+import type { ImproveRequest } from "./types";
 
 // Loaded only in the browser (dynamic, ssr:false — see CommandPanelClient):
 // the panel is chat + localStorage-pinned widgets, nothing to server-render,

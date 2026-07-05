@@ -90,7 +90,7 @@ export function CategoryBarChart(props: CategoryBarChartProps) {
   const fmtY = (v: number) => `${Math.round(v)}${props.yUnit ?? ""}`;
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {c && (
         <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
           <g transform={`translate(${M.left},${M.top})`}>

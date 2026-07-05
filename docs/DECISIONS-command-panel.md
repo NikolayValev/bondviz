@@ -99,3 +99,18 @@ User requests: (a) keep chat history in **separate conversations for different w
 - Browser-level flows (conversation switching, improve-attach, live LLM turn) still need the
   deployed site or a local `GITHUB_MODELS_TOKEN`: create two conversations, chat in each, switch
   and reload (histories separate), press ✦ on a pinned widget, send, pin the improved proposal.
+
+---
+
+## Iteration 4 (2026-07-05) — code separation (part of the web-vitals pass)
+
+User request: “separate the code properly.” See also
+[DECISIONS-web-vitals.md](DECISIONS-web-vitals.md) for the performance half.
+
+| # | Decision | Why |
+| --- | --- | --- |
+| 29 | `ChatPanel.tsx` (330 lines, three concerns) split into **`ChatPanel.tsx`** (conversation switcher only), **`ChatSession.tsx`** (one conversation's chat UI), and **`chatStorage.ts`** (all localStorage I/O: message load/save/remove, index save, first-run init + legacy migration). | One file per concern; components no longer touch `localStorage` directly. Pure index math stays in `lib/chatStore` — the storage module is the only bridge. |
+| 30 | **`layoutStorage.ts`** extracted from `DashboardPanel` (layout load/save keys), mirroring `chatStorage`. | Same storage-at-the-edge pattern for the dashboard. |
+| 31 | **`types.ts`** holds `ImproveRequest` (was exported from `ChatPanel`, imported by `PanelMount`); **`panelChrome.ts`** holds the shared ghost-button class (was duplicated inline in both panels, now composed with a per-action hover color). | Cross-component contracts live in a neutral module — no component imports another component just for a type or a class string. |
+
+No behavior change intended; 130/130 tests, lint, and build stay green.
