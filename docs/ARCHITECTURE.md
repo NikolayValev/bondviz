@@ -58,12 +58,13 @@ React (`components/`, `app/`), and external I/O is isolated in `app/api/`.* Char
 web/
 ├── app/
 │   ├── layout.tsx            # root shell: fonts (IBM Plex), <Nav>, <main>, footer
-│   ├── page.tsx              # Home: hero + live KPI snapshot + nav cards (force-dynamic)
+│   ├── page.tsx              # Home: hero + live KPI snapshot + nav cards (ISR, 1h revalidate)
 │   ├── globals.css           # ★ ALL design tokens live here (CSS vars in :root) + Tailwind
 │   ├── PrefetchSignal.tsx    # warms the 35-yr spread cache on idle from Home
 │   ├── <route>/page.tsx      # server wrapper (metadata only)
 │   ├── <route>/<Name>Client.tsx   # the actual page (client component)
 │   ├── command-panel/data.ts # DataRegistry: the only metrics chat-generated widgets can read
+│   │   └── …/ChatPanel, ChatSession, DashboardPanel, chatStorage, layoutStorage, types, panelChrome
 │   └── api/
 │       ├── command-panel/route.ts      # POST chat → streamed widget proposals (GitHub Models)
 │       ├── command-panel/data/route.ts # POST read-only metric loads backing widget useMetric()
@@ -88,7 +89,7 @@ web/
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + mobile hamburger (the LINKS array is the menu)
-│   ├── ui/                   # Card, Kpi, Metric, Segmented  (design-system primitives)
+│   ├── ui/                   # Card, Kpi, Metric, Segmented, Skeleton  (design-system primitives)
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
 │                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test

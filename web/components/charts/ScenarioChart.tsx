@@ -45,7 +45,7 @@ export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePr
   const hovered = c && hover != null ? c.pts[hover] : null;
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {c && (
         <svg
           width={width}

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { SpreadHistoryChart } from "@/components/charts/SpreadHistoryChart";
 import { currentStatus, inversionEpisodes, NBER_RECESSIONS, SpreadPoint } from "@/lib/signal";
 import { loadSpreads } from "@/lib/spreadsCache";
@@ -27,7 +28,14 @@ export function SignalClient() {
   }, [points]);
 
   if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
-  if (!view) return <p className="text-[var(--muted)]">Loading 35 years of Treasury data… (first load can take a moment)</p>;
+  if (!view)
+    return (
+      <div role="status" className="space-y-6">
+        <p className="text-[var(--muted)]">Loading 35 years of Treasury data… (first load can take a moment)</p>
+        <Skeleton className="h-24" />
+        <Skeleton className="h-96" />
+      </div>
+    );
 
   const { status } = view;
   const summary =

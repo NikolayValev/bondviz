@@ -59,7 +59,7 @@ export function LineChart(props: LineChartProps) {
   }, [props.series, props.zeroBaseline, props.xType, props.yUnit, width, height]);
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {content && (
         <svg
           width={width}

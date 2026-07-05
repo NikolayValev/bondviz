@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Segmented } from "@/components/ui/Segmented";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { carryRollDown, CarryPoint } from "@/lib/carry";
 import { rowToCurve } from "@/lib/finance";
@@ -49,7 +50,13 @@ export function CarryClient() {
   }, [rows, horizon]);
 
   if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
-  if (!view) return <p className="text-[var(--muted)]">Loading Treasury data…</p>;
+  if (!view)
+    return (
+      <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+        <Skeleton className="h-96" />
+        <Skeleton className="h-80" />
+      </div>
+    );
 
   const cats = view.points.map((p) => p.label);
 

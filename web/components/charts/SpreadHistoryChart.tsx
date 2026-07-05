@@ -63,7 +63,7 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
   }, [props.points, props.recessions, width, height]);
 
   return (
-    <div ref={ref} className="w-full">
+    <div ref={ref} className="w-full" style={{ minHeight: height }}>
       {c && (
         <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
           <g transform={`translate(${M.left},${M.top})`}>

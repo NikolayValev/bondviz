@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { StockBar } from "@/lib/types";
 import { iso, money, money0, signedPct } from "@/lib/format";
@@ -138,7 +139,11 @@ export function StocksClient() {
 
       {activeTicker && (
         <>
-          {!entry && <p className="text-[var(--muted)]">Loading {activeTicker}…</p>}
+          {!entry && (
+            <div role="status" aria-label={`Loading ${activeTicker}`}>
+              <Skeleton className="h-80" />
+            </div>
+          )}
 
           {entry && !entry.configured && (
             <Card>

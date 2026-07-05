@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { rowToCurve, spreadSeries, describeCurve, toBps } from "@/lib/finance";
 import { bootstrapZeros } from "@/lib/curve";
@@ -87,7 +88,13 @@ export function YieldCurveClient() {
   }, [rows]);
 
   if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
-  if (!view) return <p className="text-[var(--muted)]">Loading Treasury data…</p>;
+  if (!view)
+    return (
+      <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+        <Skeleton className="h-96" />
+        <Skeleton className="h-80" />
+      </div>
+    );
 
   return (
     <div className="space-y-6">

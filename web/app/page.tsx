@@ -6,7 +6,10 @@ import { fetchTreasuryYear } from "@/lib/treasury";
 import { Kpis } from "@/lib/types";
 import { PrefetchSignal } from "./PrefetchSignal";
 
-export const dynamic = "force-dynamic";
+// ISR: serve the page statically and refresh the KPI snapshot hourly (the
+// Treasury feed itself is cached hourly in fetchTreasuryYear). force-dynamic
+// blocked TTFB on an upstream XML fetch for every visitor.
+export const revalidate = 3600;
 
 async function getKpis(): Promise<{ kpis: Kpis | null; date: string | null }> {
   try {
