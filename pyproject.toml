@@ -18,10 +18,32 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.6.0", "mypy>=1.11.0"]
+etl = [
+  "SQLAlchemy>=2.0.30",
+  "psycopg[binary]>=3.1.18",
+  "alembic>=1.13.0",
+  "pydantic-settings>=2.3.0",
+  "tenacity>=8.3.0",
+]
+api = ["fastapi>=0.111.0", "uvicorn[standard]>=0.30.0"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Pre-existing dynamic/optional-import patterns in the legacy Streamlit app,
+# out of scope for the data-layer work this config was added for.
+module = ["bondviz.pricing", "bondviz.theme"]
+ignore_errors = true

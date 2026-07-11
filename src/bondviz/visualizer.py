@@ -10,7 +10,7 @@ try:
     # Prefer local bondviz sources if available
     from .treasury import latest_par_yields, fetch_treasury_par_curve  # type: ignore
     USE_BONDVIZ = True
-except Exception as e:  # pragma: no cover - optional fallback path
+except Exception:  # pragma: no cover - optional fallback path
     USE_BONDVIZ = False
     latest_par_yields = None  # type: ignore
     fetch_treasury_par_curve = None  # type: ignore
@@ -192,7 +192,7 @@ This app is wired to your bondviz fetchers first, and falls back to FRED only if
 
             st.header("Smoothing")
             st.checkbox("Apply 5-day rolling average", value=True, key="viz_smooth")
-            submitted_controls = st.form_submit_button("Update Charts")
+            st.form_submit_button("Update Charts")
 
         # Optional upload field (outside form is OK; upload itself triggers a rerun once)
         uploaded = st.file_uploader("Upload CSV (Date + tenor columns)", type=["csv"], key="viz_csv")

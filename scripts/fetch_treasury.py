@@ -1,4 +1,3 @@
-import pandas as pd
 from bondviz.treasury import latest_par_yields
 from bondviz.plots import plot_yield_curve
 

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+web/
+docs/
+tests/
+scripts/
+app/
+*.png
+*.svg
+*.csv

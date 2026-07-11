@@ -1,0 +1,20 @@
+{
+  "source": "ust_par_yield",
+  "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2024",
+  "target_date": "2024-01-02",
+  "record": {
+    "NEW_DATE": "2024-01-02T00:00:00",
+    "BC_1MONTH": "5.53",
+    "BC_2MONTH": "5.51",
+    "BC_3MONTH": "5.46",
+    "BC_6MONTH": "5.35",
+    "BC_1YEAR": "4.79",
+    "BC_2YEAR": "4.25",
+    "BC_3YEAR": "4.01",
+    "BC_5YEAR": "3.93",
+    "BC_7YEAR": "3.99",
+    "BC_10YEAR": "3.95",
+    "BC_20YEAR": "4.20",
+    "BC_30YEAR": "4.03"
+  }
+}

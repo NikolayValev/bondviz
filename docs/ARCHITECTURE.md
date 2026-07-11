@@ -17,6 +17,12 @@ BondViz is **two parallel codebases** in one repo:
 / `README.md` (which describe the Streamlit app) reflect where the work is — they predate the
 Vercel rebuild.
 
+**Exception:** `src/bondviz/{data,db,repo,api}` and `alembic/` are a newer, separate addition —
+a scheduled ETL pipeline that lands the Treasury par-yield curve in Postgres (raw → curated →
+operational layers) and a small FastAPI (`GET /curves/*`, `POST /price`) reading it. This is
+active, not frozen; see the root `README.md`'s "Data Layer" section and `.github/workflows/`.
+It has no UI of its own yet and is independent of both the Streamlit app and `web/`.
+
 Health baseline (2026-06-28): web `npm test` = **105 pass**, `npm run build` = **green**,
 `npx eslint .` = **clean**; Python `pytest` = **18 pass**.
 

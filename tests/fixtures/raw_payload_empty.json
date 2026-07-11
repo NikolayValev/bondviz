@@ -1,0 +1,6 @@
+{
+  "source": "ust_par_yield",
+  "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2024",
+  "target_date": "2024-01-01",
+  "record": {}
+}

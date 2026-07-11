@@ -1,0 +1,40 @@
+name: Ingest Treasury Curve
+
+on:
+  schedule:
+    - cron: '30 22 * * 1-5'   # 22:30 UTC, weekdays — after US close
+  workflow_dispatch:           # manual trigger, and for backfills
+    inputs:
+      date:
+        description: 'Date to ingest (YYYY-MM-DD). Leave blank for today.'
+        required: false
+        type: string
+      backfill_from:
+        description: 'Backfill start date (YYYY-MM-DD). Set together with backfill_to.'
+        required: false
+        type: string
+      backfill_to:
+        description: 'Backfill end date (YYYY-MM-DD).'
+        required: false
+        type: string
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e ".[etl]"
+      - name: Backfill
+        if: ${{ inputs.backfill_from != '' && inputs.backfill_to != '' }}
+        run: python -m bondviz.cli backfill --from "${{ inputs.backfill_from }}" --to "${{ inputs.backfill_to }}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Ingest one date
+        if: ${{ inputs.backfill_from == '' || inputs.backfill_to == '' }}
+        run: python -m bondviz.cli ingest --date "${INGEST_DATE:-$(date -u +%F)}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          INGEST_DATE: ${{ inputs.date }}

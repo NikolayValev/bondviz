@@ -1,0 +1,26 @@
+name: Keepalive
+
+# GitHub disables a repo's scheduled workflows after 60 days with no pushes.
+# This repo goes quiet between job hunts, so this monthly no-op commit keeps
+# the ingest-curve.yml cron from silently switching itself off.
+on:
+  schedule:
+    - cron: '0 12 1 * *'   # 12:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p .github
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/.keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/.keepalive
+          git diff --cached --quiet || git commit -m "chore: keepalive heartbeat"
+          git push

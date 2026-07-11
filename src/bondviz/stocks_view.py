@@ -4,7 +4,6 @@ import os
 from datetime import date, timedelta
 from typing import List
 
-import pandas as pd
 import streamlit as st
 
 from .stocks import fetch_aggregates
