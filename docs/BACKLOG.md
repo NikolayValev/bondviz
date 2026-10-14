@@ -16,6 +16,9 @@
 
 ## Suggested order
 
+> **Current priority:** follow [PORTFOLIO-PLAN.md](PORTFOLIO-PLAN.md) (2026-10-14). It re-sequences
+> the items below for portfolio readiness and adds new briefs FEAT-15 … FEAT-19.
+
 1. **Enablers** (unblock the design-system work + safety net): FEAT-1, FEAT-2, FEAT-3.
 2. **High-leverage, low-risk features**: FEAT-4, FEAT-5, FEAT-6, FEAT-7.
 3. **Depth / showcase**: FEAT-8 … FEAT-14.
