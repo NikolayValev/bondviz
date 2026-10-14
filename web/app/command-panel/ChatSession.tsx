@@ -17,6 +17,15 @@ import type { ImproveRequest } from "./types";
 // with key=conversation id (see ChatPanel) so switching conversations swaps
 // the whole useChat state, seeded from that conversation's stored history.
 
+// Starter prompts for an empty conversation: one per registered data source, so a first-time
+// visitor sees what the panel can do and gets a working widget in one click.
+const SUGGESTIONS = [
+  "Chart today's Treasury yield curve",
+  "Show the 2s10s spread over the last two years",
+  "Compare carry and roll-down across tenors",
+  "Plot the bootstrapped zero curve",
+];
+
 function toProposal(id: string, input: unknown): WidgetProposal {
   const p = input as { title: string; description: string; jsx: string; dataSources: string[] };
   return { id, title: p.title, description: p.description, jsx: p.jsx, dataSources: p.dataSources };
@@ -86,10 +95,25 @@ export function ChatSession({
     <>
       <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
         {messages.length === 0 && (
-          <p className="m-auto max-w-[28ch] text-center text-sm text-[var(--faint)]">
-            Ask for a chart or stat — e.g. “chart the treasury yield curve”. Each conversation keeps
-            its own history.
-          </p>
+          <div className="m-auto flex max-w-sm flex-col items-center gap-3 text-center">
+            <p className="text-sm text-[var(--faint)]">
+              Ask for a chart or a stat in plain English, or start with one of these. Each
+              conversation keeps its own history.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGGESTIONS.map((text) => (
+                <button
+                  key={text}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => sendMessage({ text })}
+                  className="rounded-full border border-[var(--panel-border-strong)] px-3 py-1.5 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--accent-dim)] hover:text-[var(--text)] disabled:opacity-40"
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {messages.map((message) =>
           message.parts.map((part, i) => {

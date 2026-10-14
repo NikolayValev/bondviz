@@ -239,7 +239,8 @@ export default function AboutPage() {
           for it. The model can&apos;t fetch anything on its own: widgets can only read from a fixed
           registry of five server-side metrics (par curve, curve KPIs, zero curve, carry and spread
           history), which call the same tested functions as the rest of the app. Pinned widgets are
-          saved in your browser.
+          saved in your browser. Because the model runs on one shared quota, the endpoint is
+          rate-limited per visitor and caps the conversation length.
         </p>
       </Section>
 
