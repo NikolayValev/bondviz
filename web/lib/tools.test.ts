@@ -23,7 +23,9 @@ describe("tool registry", () => {
   });
 
   it("builds page metadata and rejects unknown routes", () => {
-    expect(toolMetadata("/pricing").title).toBe("Bond Pricing & Risk Lab");
+    const m = toolMetadata("/pricing");
+    expect(m.title).toBe("Bond Pricing & Risk Lab");
+    expect(m.openGraph.url).toBe("/pricing");
     expect(() => toolMetadata("/nope")).toThrow();
   });
 });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
-import { AUTHOR, SOURCE_URL } from "@/lib/site";
+import { AUTHOR, SOURCE_URL, rootMetadata } from "@/lib/site";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -18,10 +18,7 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "BondViz",
-  description: "Fixed-income & markets research terminal",
-};
+export const metadata: Metadata = rootMetadata;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

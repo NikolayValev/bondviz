@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
-import { AUTHOR, SOURCE_URL } from "@/lib/site";
+import { AUTHOR, SOURCE_URL, pageMetadata } from "@/lib/site";
 
-export const metadata = {
-  title: "Methodology · BondViz",
+export const metadata = pageMetadata({
+  title: "Methodology",
   description:
     "How BondViz works: data sources, compounding conventions, and the formulas behind pricing, the curve bootstrap, carry, the recession signal and PCA.",
-};
+  path: "/about",
+});
 
 const SECTIONS = [
   { id: "conventions", title: "Conventions" },

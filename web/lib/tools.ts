@@ -1,3 +1,5 @@
+import { pageMetadata } from "@/lib/site";
+
 // The one list of tools in the app. Nav, Home, the sitemap and per-page metadata all read it,
 // so adding a page is one entry here (plus the route itself).
 
@@ -81,9 +83,9 @@ export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/about", label: "About" },
 ];
 
-/** Next.js `metadata` for a tool's page wrapper. The root layout adds " · BondViz". */
-export function toolMetadata(href: string): { title: string; description: string } {
+/** Next.js `metadata` for a tool's page wrapper (title, description, canonical, previews). */
+export function toolMetadata(href: string) {
   const tool = TOOLS.find((t) => t.href === href);
   if (!tool) throw new Error(`No tool registered for ${href}`);
-  return { title: tool.title, description: tool.description };
+  return pageMetadata({ title: tool.title, description: tool.description, path: tool.href });
 }

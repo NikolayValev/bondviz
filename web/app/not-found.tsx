@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { TOOLS } from "@/lib/tools";
 
-export const metadata = { title: "Page not found · BondViz" };
+export const metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (
