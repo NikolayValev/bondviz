@@ -89,7 +89,7 @@ web/
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + mobile hamburger (the LINKS array is the menu)
-│   ├── ui/                   # Card, Kpi, Metric, Segmented, Skeleton  (design-system primitives)
+│   ├── ui/                   # Card, Metric, Segmented, Skeleton  (design-system primitives)
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
 │                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test

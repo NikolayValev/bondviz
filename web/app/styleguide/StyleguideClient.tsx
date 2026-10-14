@@ -6,7 +6,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
-import { Kpi } from "@/components/ui/Kpi";
 import { Segmented } from "@/components/ui/Segmented";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
@@ -165,7 +164,6 @@ export function StyleguideClient() {
               <Metric label="Negative" value="−42 bps" tone="neg" />
               <Metric label="Neutral" value="100.00" tone="neutral" />
               <Metric label="Large" value="$1,012.50" tone="accent" size="lg" sub="with sub-label" />
-              <Kpi label="Kpi (legacy)" value="4.40%" />
             </div>
           </Card>
           <Card>
