@@ -161,9 +161,11 @@ export function YieldCurveClient() {
           dates={view.heatmap.dates}
           tenors={view.heatmap.tenors}
           values={view.heatmap.values}
+          unit="%"
         />
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Each row is a date (old → new), each column a tenor; brighter cells are higher yields.
+          Each row is a date (oldest at the top), each column a tenor; brighter cells are higher
+          yields (see the scale below the chart).
           Watch horizontal bands for tenor-specific moves and diagonal gradients for rolling
           steepeners or flatteners.
         </p>

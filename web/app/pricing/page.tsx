@@ -1,6 +1,7 @@
 import { PricingClient } from "./PricingClient";
+import { toolMetadata } from "@/lib/tools";
 
-export const metadata = { title: "Bond Pricing · BondViz" };
+export const metadata = toolMetadata("/pricing");
 
 export default function PricingPage() {
   return <PricingClient />;

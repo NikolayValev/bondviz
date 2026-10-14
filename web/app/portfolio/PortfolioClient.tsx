@@ -105,8 +105,9 @@ export function PortfolioClient() {
         </div>
 
         <div className="space-y-3">
-          {holdings.map((h) => {
-            const hm = metrics.holdings[holdings.indexOf(h)];
+          {holdings.map((h, i) => {
+            // portfolioMetrics preserves input order, so metrics line up by index.
+            const hm = metrics.holdings[i];
             return (
               <div key={h.id} className="rounded-[var(--radius)] border border-[var(--panel-border)] bg-[var(--panel-2)] p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">

@@ -129,8 +129,11 @@ export function PricingClient() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Face value" unit="$" value={face} step={100} min={0} onChange={setFace} />
             <Field label="Maturity" unit="yr" value={years} step={1} min={0.5} max={30} onChange={setYears} slider />
-            <Field label="Coupon" unit="%" value={couponPct} step={0.25} min={0} max={15} onChange={setCouponPct} slider />
-            <div>
+            <div className="col-span-2">
+              <Field label="Coupon" unit="%" value={couponPct} step={0.25} min={0} max={15} onChange={setCouponPct} slider />
+            </div>
+            {/* Full row: in a half-width cell the three options wrapped into a stacked blob. */}
+            <div className="col-span-2">
               <span className="eyebrow">Coupon frequency</span>
               <div className="mt-1.5">
                 <Segmented ariaLabel="Coupon frequency" options={FREQ} value={freq} onChange={(v) => setFreq(v as number)} />

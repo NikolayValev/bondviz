@@ -21,7 +21,7 @@ chart series colors, spacing, radii, and fonts are partly hardcoded.
 | **Fonts** | `web/app/layout.tsx` | `IBM_Plex_Sans` + `IBM_Plex_Mono` via `next/font/google`, exposed as `--font-plex-sans/mono`, aliased to `--font-sans/mono` in globals.css. |
 | **Background / grid / scrollbars / focus / animations** | `web/app/globals.css` | `.gridlines::before`, `body` radial gradients, `.rise`/`.menu-drop` keyframes, `::selection`, reduced-motion. |
 | **Radius** | `--radius: 14px` in globals.css **and** ad-hoc `rounded-lg`/`rounded-full` in components | Not fully tokenized. |
-| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Kpi`, `Segmented`. |
+| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Segmented`, `Skeleton`. |
 | **Chart styling** | `web/components/charts/*` | Axes/grid use `var(--*)`; **series colors are hardcoded hex** (the main gap). |
 | **Tailwind** | `@import "tailwindcss"` in globals.css; `postcss.config.mjs` | Tailwind **v4**, no `tailwind.config.js`. CSS vars are **not** registered as Tailwind theme tokens. |
 
@@ -42,7 +42,6 @@ Shape    : --radius 14px
 - **`Card`** — panel with left accent border (`border-l-[3px] border-l-[var(--accent)]`).
 - **`Metric`** — labelled stat with `tone` (`accent|pos|neg|neutral`) and `size` (`md|lg`). The
   workhorse for KPIs.
-- **`Kpi`** — simpler label/value pair (older; `Metric` largely supersedes it).
 - **`Segmented`** — pill segmented control, single- or multi-select; used for every toggle
   (frequency, horizon, lookback, shift magnitudes, active ticker).
 
@@ -101,7 +100,7 @@ Ordered so each step is independently shippable and low-risk.
    is separate CSS — restyle it there.
 3. **Swap fonts** in `layout.tsx` (`next/font/google` or `next/font/local`) + the `--font-*`
    aliases. Keep `tabnum`/monospace for numerics — it's load-bearing for the "terminal" feel.
-4. **Restyle the four primitives** (`ui/Card|Metric|Kpi|Segmented`) — this propagates to every
+4. **Restyle the primitives** (`ui/Card|Metric|Segmented|Skeleton`) — this propagates to every
    page because they're reused everywhere.
 5. **Sweep the charts** for spacing/stroke widths/radii once series colors are tokenized.
 6. **Verify**: `npm run build` + `npx eslint .` + a manual pass of all 8 routes (light/dark if you
@@ -122,6 +121,6 @@ Ordered so each step is independently shippable and low-risk.
   `prefers-color-scheme`, no theme toggle). Add only if the new system needs it (FEAT-11).
 - **No spacing/typography scale tokens** — spacing is Tailwind defaults inline; type sizes are
   ad-hoc (`text-2xl`, `text-5xl`). Fine, but not centrally tunable.
-- **`Kpi` vs `Metric` overlap** — consolidate to one primitive during the restyle.
+- ~~**`Kpi` vs `Metric` overlap**~~ — resolved: `Kpi` removed, `Metric` is the one label/value primitive (BUG-11).
 - **No component catalog** — there's no Storybook/preview page to see primitives in isolation;
   agents must read source. A `/styleguide` route would speed design iteration (FEAT-9).

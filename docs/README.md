@@ -9,6 +9,7 @@ read one or two of them plus the file it's editing and have full context.
 | [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) | …are touching look-and-feel, tokens, the design-system swap, or charts. Inventory of every styling decision + a migration playbook. |
 | [BACKLOG.md](BACKLOG.md) | …are picking up a feature/improvement. Agent-ready briefs (`FEAT-*`) with files, approach, effort, acceptance. |
 | [BUGS.md](BUGS.md) | …are fixing something. Tiered bugs & tech debt (`BUG-*`) with location + fix sketch. |
+| [PORTFOLIO-PLAN.md](PORTFOLIO-PLAN.md) | …deciding what to do next. Phased plan to make the app portfolio-ready; sequences BACKLOG/BUGS items and adds FEAT-15+. |
 
 **Most important orientation fact:** the active product is the **Next.js app in `web/`**. The
 Python/Streamlit code (`src/bondviz/`, `app/`, root `README.md`/`CLAUDE.md`) is a frozen reference
@@ -18,5 +19,5 @@ Process artifacts (design specs + numbered implementation plans for past feature
 [superpowers/specs/](superpowers/specs/) and [superpowers/plans/](superpowers/plans/) — the two
 most recent are the best templates for building a new tool the way this codebase does.
 
-> Health baseline at last review (2026-06-28): web `npm test` 105 pass · `npm run build` green ·
+> Health baseline at last review (2026-10-14): web `npm test` 174 pass · `npm run build` green ·
 > `npx eslint .` clean; Python `pytest` 18 pass.

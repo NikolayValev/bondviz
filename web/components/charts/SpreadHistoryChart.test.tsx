@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { SpreadHistoryChart } from "@/components/charts/SpreadHistoryChart";
+import { SpreadHistoryChart, withZeroCrossings } from "@/components/charts/SpreadHistoryChart";
 
 const points = [
   { date: "2019-01-01", s10y3m: 0.3, s2s10s: 0.2 },
@@ -28,5 +28,23 @@ describe("SpreadHistoryChart", () => {
       <SpreadHistoryChart width={800} ariaLabel="empty" points={[]} recessions={recessions} />,
     );
     expect(container.querySelector("svg")).toBeNull();
+  });
+});
+
+describe("withZeroCrossings", () => {
+  it("inserts an interpolated zero at each sign change", () => {
+    expect(withZeroCrossings([{ t: 0, v: 1 }, { t: 10, v: -3 }, { t: 20, v: -1 }, { t: 30, v: 1 }])).toEqual([
+      { t: 0, v: 1 },
+      { t: 2.5, v: 0 },
+      { t: 10, v: -3 },
+      { t: 20, v: -1 },
+      { t: 25, v: 0 },
+      { t: 30, v: 1 },
+    ]);
+  });
+  it("leaves runs without a strict sign change alone", () => {
+    const pts = [{ t: 0, v: 1 }, { t: 1, v: 0 }, { t: 2, v: -1 }];
+    expect(withZeroCrossings(pts)).toEqual(pts);
+    expect(withZeroCrossings([])).toEqual([]);
   });
 });

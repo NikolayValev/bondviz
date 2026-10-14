@@ -2,17 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { NAV_LINKS as LINKS } from "@/lib/tools";
 
-const LINKS = [
-  { href: "/yield-curve", label: "Yield Curve" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/carry", label: "Carry" },
-  { href: "/signal", label: "Signal" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/pca", label: "PCA" },
-  { href: "/stocks", label: "Stocks" },
-  { href: "/command-panel", label: "Command" },
-];
 
 export function Nav() {
   const pathname = usePathname();
@@ -34,7 +25,7 @@ export function Nav() {
         </Link>
 
         {/* Desktop / tablet: inline pill row */}
-        <div className="hidden items-center gap-1 text-sm md:flex">
+        <div className="hidden items-center gap-1 text-sm lg:flex">
           {LINKS.map((l) => {
             const active = isActive(l.href);
             return (
@@ -42,7 +33,7 @@ export function Nav() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-full px-3 py-1.5 transition-colors ${
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 transition-colors ${
                   active
                     ? "bg-[var(--accent-dim)] text-[var(--accent)]"
                     : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
@@ -61,7 +52,7 @@ export function Nav() {
           aria-expanded={open}
           aria-controls="mobile-nav"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--panel-border)] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--panel-border)] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] lg:hidden"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             {open ? (
@@ -82,7 +73,7 @@ export function Nav() {
 
       {/* Mobile dropdown panel */}
       {open && (
-        <div id="mobile-nav" className="origin-top border-t border-[var(--panel-border)] md:hidden menu-drop">
+        <div id="mobile-nav" className="origin-top border-t border-[var(--panel-border)] lg:hidden menu-drop">
           <div className="mx-auto grid max-w-6xl grid-cols-2 gap-1.5 px-5 py-3 sm:px-6">
             {LINKS.map((l) => {
               const active = isActive(l.href);

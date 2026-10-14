@@ -19,6 +19,22 @@ const M = { top: 14, right: 18, bottom: 30, left: 50 };
 
 interface XY { t: number; v: number; }
 
+/** Insert a point at each linearly interpolated sign change, so a fill clipped at zero meets
+ *  the baseline exactly where the line crosses it rather than at the neighbouring sample. */
+export function withZeroCrossings(points: XY[]): XY[] {
+  const out: XY[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const prev = points[i - 1];
+    if (prev && ((prev.v < 0 && p.v > 0) || (prev.v > 0 && p.v < 0))) {
+      const f = prev.v / (prev.v - p.v);
+      out.push({ t: prev.t + f * (p.t - prev.t), v: 0 });
+    }
+    out.push(p);
+  }
+  return out;
+}
+
 export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
@@ -41,7 +57,8 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
 
     const lineGen = line<XY>().x((p) => x(p.t)).y((p) => y(p.v));
 
-    // Inversion fill: area between the 10y3m line and zero, clipped to negatives.
+    // Inversion fill: area between the 10y3m line and zero, clipped to negatives (drawn over
+    // withZeroCrossings(s10) so the clip lands on the exact crossing).
     const zeroY = y(0);
     const invArea = area<XY>()
       .x((p) => x(p.t))
@@ -57,7 +74,7 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
       .filter((b) => b.x + b.w >= 0 && b.x <= iw);
 
     return {
-      iw, ih, x, y, zeroY, s10, s2, lineGen, invArea, recBands,
+      iw, ih, x, y, zeroY, s10, s2, lineGen, invArea, recBands, s10Fill: withZeroCrossings(s10),
       xTicks: x.ticks(8), yTicks: y.ticks(5),
     };
   }, [props.points, props.recessions, width, height]);
@@ -88,7 +105,7 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
               </g>
             ))}
             {/* inversion fill (red, below zero) */}
-            <path className="inversion-fill" d={c.invArea(c.s10) ?? ""} fill="var(--neg)" opacity={0.18} />
+            <path className="inversion-fill" d={c.invArea(c.s10Fill) ?? ""} fill="var(--neg)" opacity={0.18} />
             {/* zero baseline */}
             <line x1={0} x2={c.iw} y1={c.zeroY} y2={c.zeroY} stroke="var(--panel-border-strong)" strokeDasharray="3 3" />
             {/* series */}
