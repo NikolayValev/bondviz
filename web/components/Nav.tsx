@@ -2,17 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { NAV_LINKS as LINKS } from "@/lib/tools";
 
-const LINKS = [
-  { href: "/yield-curve", label: "Yield Curve" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/carry", label: "Carry" },
-  { href: "/signal", label: "Signal" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/pca", label: "PCA" },
-  { href: "/stocks", label: "Stocks" },
-  { href: "/command-panel", label: "Command" },
-];
 
 export function Nav() {
   const pathname = usePathname();

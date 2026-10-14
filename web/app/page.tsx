@@ -4,6 +4,8 @@ import { Metric } from "@/components/ui/Metric";
 import { computeCurveKpis, toBps } from "@/lib/finance";
 import { fetchTreasuryYear } from "@/lib/treasury";
 import { Kpis } from "@/lib/types";
+import { TOOLS, TOOL_GROUPS } from "@/lib/tools";
+import { SOURCE_URL } from "@/lib/site";
 import { PrefetchSignal } from "./PrefetchSignal";
 
 // ISR: serve the page statically and refresh the KPI snapshot hourly (the
@@ -39,9 +41,26 @@ export default async function Home() {
           BOND<span className="text-[var(--accent)]">VIZ</span>
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-[var(--muted)]">
-          Live U.S. Treasury data to visualize the yield curve and price bonds — present value,
-          duration, convexity and parallel-shift scenarios, with hand-rolled D3 charts.
+          Live U.S. Treasury data, end to end: explore and decompose the yield curve, price and
+          stress-test bonds and portfolios, track the inversion recession signal, or ask for a chart
+          in plain English. Hand-rolled D3 charts on unit-tested bond math.
         </p>
+        <div className="mt-5 flex flex-wrap gap-3 text-sm">
+          <Link
+            href="/yield-curve"
+            className="rounded-full bg-[var(--accent)] px-4 py-2 font-medium text-[var(--on-accent)] transition-opacity hover:opacity-90"
+          >
+            Explore the curve
+          </Link>
+          <a
+            href={SOURCE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-[var(--panel-border)] px-4 py-2 text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)]"
+          >
+            View source
+          </a>
+        </div>
       </section>
 
       <section className="rise" style={{ animationDelay: "60ms" }}>
@@ -62,40 +81,23 @@ export default async function Home() {
         )}
       </section>
 
-      <section className="grid grid-cols-1 gap-4 rise sm:grid-cols-2" style={{ animationDelay: "120ms" }}>
-        <Link href="/yield-curve" className="group">
-          <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
-            <h3 className="flex items-center justify-between text-[var(--accent)]">
-              Yield Curve <span className="transition-transform group-hover:translate-x-1">→</span>
-            </h3>
-            <p className="mt-2 text-sm text-[var(--muted)]">Latest curve, shifts versus the past, and key spreads over time.</p>
-          </Card>
-        </Link>
-        <Link href="/pricing" className="group">
-          <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
-            <h3 className="flex items-center justify-between text-[var(--accent)]">
-              Bond Pricing &amp; Risk <span className="transition-transform group-hover:translate-x-1">→</span>
-            </h3>
-            <p className="mt-2 text-sm text-[var(--muted)]">PV, duration, convexity and a parallel-shift scenario analyzer.</p>
-          </Card>
-        </Link>
-        <Link href="/carry" className="group">
-          <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
-            <h3 className="flex items-center justify-between text-[var(--accent)]">
-              Carry &amp; Roll-Down <span className="transition-transform group-hover:translate-x-1">→</span>
-            </h3>
-            <p className="mt-2 text-sm text-[var(--muted)]">Horizon carry, roll-down and breakeven cushion across the curve.</p>
-          </Card>
-        </Link>
-        <Link href="/signal" className="group">
-          <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
-            <h3 className="flex items-center justify-between text-[var(--accent)]">
-              Recession Signal <span className="transition-transform group-hover:translate-x-1">→</span>
-            </h3>
-            <p className="mt-2 text-sm text-[var(--muted)]">Curve inversion vs NBER recessions since 1990, with episode history.</p>
-          </Card>
-        </Link>
-      </section>
+      {TOOL_GROUPS.map((group, gi) => (
+        <section key={group} className="rise" style={{ animationDelay: `${120 + gi * 60}ms` }}>
+          <h2 className="eyebrow mb-3">{group}</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {TOOLS.filter((t) => t.group === group).map((t) => (
+              <Link key={t.href} href={t.href} className="group">
+                <Card className="h-full transition-all group-hover:border-l-[var(--accent)] group-hover:bg-[var(--panel)]">
+                  <h3 className="flex items-center justify-between text-[var(--accent)]">
+                    {t.title} <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </h3>
+                  <p className="mt-2 text-sm text-[var(--muted)]">{t.description}</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
