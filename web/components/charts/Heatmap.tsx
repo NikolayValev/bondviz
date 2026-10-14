@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import { HEATMAP_STOPS as STOPS } from "@/lib/chartColors";
 
@@ -23,14 +23,36 @@ export interface HeatmapProps {
   ariaLabel: string;
   width?: number;
   height?: number;
+  unit?: string;                 // appended to the legend's min/max labels
 }
 
-const M = { top: 8, right: 12, bottom: 28, left: 12 };
+// Left margin holds the date axis; bottom holds tenor labels plus the color legend.
+const M = { top: 8, right: 12, bottom: 64, left: 64 };
+const LEGEND_W = 160;
+const MIN_LABEL_GAP = 22; // px between date labels
+
+/** Row indices to label: first, last, and evenly spaced rows between that fit the height. */
+export function dateTickIndices(rows: number, innerHeight: number): number[] {
+  if (rows <= 0) return [];
+  if (rows === 1) return [0];
+  const slots = Math.max(2, Math.min(6, Math.floor(innerHeight / MIN_LABEL_GAP)));
+  const out = new Set<number>();
+  for (let k = 0; k < slots; k++) out.add(Math.round((k * (rows - 1)) / (slots - 1)));
+  return [...out].sort((a, b) => a - b);
+}
+
+const fmtDate = (d: string) =>
+  new Date(`${d.slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
 export function Heatmap(props: HeatmapProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
-  const height = props.height ?? 260;
+  const height = props.height ?? 300;
+  const gradientId = useId();
 
   const content = useMemo(() => {
     if (width === 0 || props.dates.length === 0 || props.tenors.length === 0) return null;
@@ -50,7 +72,9 @@ export function Heatmap(props: HeatmapProps) {
       }
     }
     const span = max > min ? max - min : 1;
-    return { iw, ih, cellW, cellH, min, max, span };
+    const dateTicks = dateTickIndices(props.dates.length, ih);
+    const hasValues = Number.isFinite(min) && Number.isFinite(max);
+    return { iw, ih, cellW, cellH, min, max, span, dateTicks, hasValues };
   }, [props.dates, props.tenors, props.values, width, height]);
 
   return (
@@ -84,6 +108,38 @@ export function Heatmap(props: HeatmapProps) {
                 {label}
               </text>
             ))}
+            {content.dateTicks.map((di) => (
+              <text
+                key={`d${di}`}
+                x={-8}
+                y={di * content.cellH + content.cellH / 2}
+                dy="0.32em"
+                textAnchor="end"
+                fontSize={11}
+                fill="var(--muted)"
+                className="tabnum heatmap-date"
+              >
+                {fmtDate(props.dates[di])}
+              </text>
+            ))}
+            {content.hasValues && (
+              <g className="heatmap-legend" transform={`translate(${Math.max(0, content.iw - LEGEND_W)},${content.ih + 32})`}>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+                    {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+                      <stop key={t} offset={t} stopColor={colorRamp(t)} />
+                    ))}
+                  </linearGradient>
+                </defs>
+                <rect width={Math.min(LEGEND_W, content.iw)} height={8} rx={2} fill={`url(#${gradientId})`} />
+                <text y={22} fontSize={11} fill="var(--muted)" className="tabnum">
+                  {`${content.min.toFixed(2)}${props.unit ?? ""}`}
+                </text>
+                <text x={Math.min(LEGEND_W, content.iw)} y={22} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
+                  {`${content.max.toFixed(2)}${props.unit ?? ""}`}
+                </text>
+              </g>
+            )}
           </g>
         </svg>
       )}
