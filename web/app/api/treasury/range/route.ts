@@ -11,12 +11,12 @@ export async function GET(req: Request) {
   try {
     const y0 = new Date(start).getUTCFullYear();
     const y1 = new Date(end).getUTCFullYear();
-    const all: YieldRow[] = [];
-    for (let y = y0; y <= y1; y++) {
-      const rows = await fetchTreasuryYear(y).catch(() => [] as YieldRow[]);
-      all.push(...rows);
-    }
-    const rows = all.filter((r) => r.date >= start && r.date <= end);
+    const years = Array.from({ length: Math.max(0, y1 - y0 + 1) }, (_, i) => y0 + i);
+    // One request per calendar year, fetched in parallel (same pattern as /spreads).
+    const perYear = await Promise.all(
+      years.map((y) => fetchTreasuryYear(y).catch(() => [] as YieldRow[])),
+    );
+    const rows = perYear.flat().filter((r) => r.date >= start && r.date <= end);
     return NextResponse.json({ rows });
   } catch {
     return NextResponse.json({ rows: [] }, { status: 503 });
