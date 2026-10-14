@@ -110,8 +110,8 @@ export function SignalClient() {
           </table>
         </div>
         <p className="mt-3 text-xs text-[var(--faint)]">
-          An episode is a maximal run of days with 10y–3m ≤ 0. &ldquo;Recession ≤24m&rdquo; marks episodes whose start
-          preceded an NBER recession by no more than 24 months.
+          An episode is a maximal run of days with 10y–3m ≤ 0. &ldquo;Recession ≤24m&rdquo; marks episodes that
+          overlap an NBER recession or end no more than 24 months before one starts.
         </p>
       </Card>
     </div>

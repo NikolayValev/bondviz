@@ -118,7 +118,11 @@ h1, h2, h3 { letter-spacing: -0.01em; font-weight: 600; }
   color: var(--faint);
 }
 
-a { color: inherit; text-decoration: none; }
+/* In the base layer so Tailwind color utilities on links (nav active/muted states,
+ * accent links) win; unlayered, this rule silently overrode every one of them. */
+@layer base {
+  a { color: inherit; text-decoration: none; }
+}
 
 /* Inputs */
 input[type="number"], select {
