@@ -1,6 +1,6 @@
 "use client";
 import { useMemo } from "react";
-import { scaleLinear } from "d3-scale";
+import { scaleLinear, scaleUtc } from "d3-scale";
 import { line } from "d3-shape";
 import { extent } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
@@ -42,17 +42,27 @@ export function LineChart(props: LineChartProps) {
     const [x0, x1] = extent(allX) as [number, number];
     const [y0, y1] = extent(allY) as [number, number];
 
-    const x = scaleLinear().domain([x0 ?? 0, x1 ?? 1]).range([0, iw]).nice();
+    // Time x values are epoch-ms at UTC midnight (from "YYYY-MM-DD"), so a UTC time scale puts
+    // ticks on real calendar boundaries; a linear scale would tick at arbitrary milliseconds.
+    const isTime = props.xType === "time";
+    const xDomain = [x0 ?? 0, x1 ?? 1];
+    const xTime = scaleUtc().domain(xDomain).range([0, iw]);
+    const xLin = scaleLinear().domain(xDomain).range([0, iw]).nice();
+    const x = (v: number) => (isTime ? xTime(v) : xLin(v));
     const y = scaleLinear().domain([y0 ?? 0, y1 ?? 1]).range([ih, 0]).nice();
 
     const gen = line<[number, number]>()
       .x((p) => x(p[0]))
       .y((p) => y(p[1]));
 
-    const xTicks = x.ticks(6);
+    const xTicks = isTime ? xTime.ticks(6).map((d) => d.getTime()) : xLin.ticks(6);
     const yTicks = y.ticks(5);
-    const fmtX = (v: number) =>
-      props.xType === "time" ? new Date(v).toLocaleDateString(undefined, { year: "2-digit", month: "short" }) : String(v);
+    // Under ~4 months the ticks fall inside months, so label the day; beyond that, month + year.
+    const shortSpan = isTime && xDomain[1] - xDomain[0] < 120 * 86_400_000;
+    const timeFmt: Intl.DateTimeFormatOptions = shortSpan
+      ? { month: "short", day: "numeric", timeZone: "UTC" }
+      : { month: "short", year: "2-digit", timeZone: "UTC" };
+    const fmtX = (v: number) => (isTime ? new Date(v).toLocaleDateString(undefined, timeFmt) : String(v));
     const fmtY = (v: number) => `${v}${props.yUnit ?? ""}`;
 
     return { iw, ih, x, y, gen, xTicks, yTicks, fmtX, fmtY };
