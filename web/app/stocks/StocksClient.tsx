@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
@@ -54,8 +54,15 @@ export function StocksClient() {
 
   const cacheKey = activeTicker ? `${activeTicker}|${from}|${to}` : null;
 
+  // The fetch effect reads the cache through a ref so that cache writes don't re-run it (and
+  // cancel an in-flight request for a different key); it only reacts to a new key.
+  const cacheRef = useRef(cache);
   useEffect(() => {
-    if (!cacheKey || !activeTicker || cache[cacheKey]) return;
+    cacheRef.current = cache;
+  }, [cache]);
+
+  useEffect(() => {
+    if (!cacheKey || !activeTicker || cacheRef.current[cacheKey]) return;
     let cancelled = false;
     fetch(`/api/stocks/aggregates?ticker=${encodeURIComponent(activeTicker)}&from=${from}&to=${to}`)
       .then((r) => r.json())
@@ -73,7 +80,7 @@ export function StocksClient() {
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, activeTicker, from, to, cache]);
+  }, [cacheKey, activeTicker, from, to]);
 
   const entry = cacheKey ? cache[cacheKey] : undefined;
 
