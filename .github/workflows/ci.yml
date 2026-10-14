@@ -1,8 +1,9 @@
 name: CI
 
+# Every branch: this repo merges finished branches straight to main, so the
+# branch push is the last chance to catch a red build.
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
