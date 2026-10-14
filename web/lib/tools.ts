@@ -33,7 +33,7 @@ export const TOOLS: Tool[] = [
     href: "/signal",
     nav: "Signal",
     title: "Inversion & Recession Signal",
-    description: "35 years of 10y–3m and 2s10s spreads against NBER recessions, with every inversion episode.",
+    description: "Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, with each inversion episode.",
     group: "Rates",
   },
   {
@@ -75,8 +75,11 @@ export const TOOLS: Tool[] = [
 
 export const TOOL_GROUPS: ToolGroup[] = ["Rates", "Risk", "Markets & AI"];
 
-/** Nav menu: every tool. */
-export const NAV_LINKS: { href: string; label: string }[] = TOOLS.map((t) => ({ href: t.href, label: t.nav }));
+/** Nav menu: every tool, then the methodology page. */
+export const NAV_LINKS: { href: string; label: string }[] = [
+  ...TOOLS.map((t) => ({ href: t.href, label: t.nav })),
+  { href: "/about", label: "About" },
+];
 
 /** Next.js `metadata` for a tool's page wrapper. The root layout adds " · BondViz". */
 export function toolMetadata(href: string): { title: string; description: string } {

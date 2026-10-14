@@ -17,8 +17,9 @@ describe("tool registry", () => {
     for (const g of TOOL_GROUPS) expect(TOOLS.some((t) => t.group === g)).toBe(true);
   });
 
-  it("links every tool from the nav", () => {
-    expect(NAV_LINKS.map((l) => l.href)).toEqual(TOOLS.map((t) => t.href));
+  it("links every tool from the nav, plus the methodology page", () => {
+    expect(NAV_LINKS.map((l) => l.href)).toEqual([...TOOLS.map((t) => t.href), "/about"]);
+    for (const l of NAV_LINKS) expect(existsSync(`${appDir}${l.href}/page.tsx`), l.href).toBe(true);
   });
 
   it("builds page metadata and rejects unknown routes", () => {

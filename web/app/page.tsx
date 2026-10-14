@@ -52,6 +52,12 @@ export default async function Home() {
           >
             Explore the curve
           </Link>
+          <Link
+            href="/about"
+            className="rounded-full border border-[var(--panel-border)] px-4 py-2 text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)]"
+          >
+            How the math works
+          </Link>
           <a
             href={SOURCE_URL}
             target="_blank"
