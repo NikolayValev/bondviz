@@ -10,6 +10,23 @@ const TREASURY_URL = (year: number) =>
   "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml" +
   `?data=daily_treasury_yield_curve&field_tdr_date_value=${year}`;
 
+// The feed's dates are wall-clock strings like "2025-01-03T00:00:00" with no offset. Parsing
+// them with `new Date()` reads them in the server's local zone, and `toISOString()` then shifts
+// east-of-UTC servers back a day. Take the calendar date from the string itself instead.
+export function toIsoDate(raw: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw.trim());
+  if (m) {
+    const [, y, mo, d] = m;
+    const t = new Date(Date.UTC(+y, +mo - 1, +d));
+    return t.getUTCMonth() === +mo - 1 && t.getUTCDate() === +d ? `${y}-${mo}-${d}` : null;
+  }
+  // Any other format: parse and read back with local getters, which round-trips the wall date.
+  const t = new Date(raw);
+  if (Number.isNaN(t.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+}
+
 export function parseTreasuryXml(xml: string): YieldRow[] {
   const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true });
   const doc = parser.parse(xml);
@@ -23,10 +40,10 @@ export function parseTreasuryXml(xml: string): YieldRow[] {
     if (!props) continue;
     const rawDate = props.NEW_DATE ?? props.DATE ?? props.RecordDate;
     if (!rawDate) continue;
-    const d = new Date(rawDate);
-    if (Number.isNaN(d.getTime())) continue;
+    const date = toIsoDate(String(rawDate));
+    if (!date) continue;
 
-    const row: YieldRow = { date: d.toISOString().slice(0, 10) };
+    const row: YieldRow = { date };
     for (const col of YIELD_COLS) {
       const v = props[col];
       row[col] = v === undefined || v === null || v === "" ? null : Number(v);
