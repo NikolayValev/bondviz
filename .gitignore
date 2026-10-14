@@ -46,6 +46,8 @@ desktop.ini
 *.xlsx
 reports/
 output/
+# …except the README screenshots
+!docs/img/*.png
 
 # Secrets / local config
 .env

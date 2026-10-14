@@ -19,5 +19,5 @@ Process artifacts (design specs + numbered implementation plans for past feature
 [superpowers/specs/](superpowers/specs/) and [superpowers/plans/](superpowers/plans/) — the two
 most recent are the best templates for building a new tool the way this codebase does.
 
-> Health baseline at last review (2026-06-28): web `npm test` 105 pass · `npm run build` green ·
+> Health baseline at last review (2026-10-14): web `npm test` 174 pass · `npm run build` green ·
 > `npx eslint .` clean; Python `pytest` 18 pass.

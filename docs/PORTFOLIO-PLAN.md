@@ -6,7 +6,16 @@
 > clean architecture). Written 2026-10-14. IDs continue the `FEAT-*` / `BUG-*` scheme from
 > [BACKLOG.md](BACKLOG.md) and [BUGS.md](BUGS.md); new items start at **FEAT-15**.
 
-## Where things stand (verified 2026-10-14)
+## Progress
+
+**2026-10-14:** Phases 1 and 2 are done on branch `ccr-7b1cc429-4khf5e` (one commit per item, CI
+green). Beyond the plan, a screenshot pass at 390/800/1024/1440px found and fixed: link color
+utilities silently overridden by an unlayered `a {}` rule, nav wrapping at tablet widths, the
+pricing frequency control collapsing, and a Signal footnote that misstated the 24-month rule.
+Still open: the **decisions** below, **Phase 3** (pick 2–3) and the parts of **Phase 4** that
+need you (Lighthouse on production, the portfolio write-up, pinning the repo).
+
+## Where things stood (audit, 2026-10-14)
 
 | Check | Result |
 | --- | --- |
@@ -172,22 +181,22 @@ better story), FEAT-11 (light mode), auth (no user value for a public demo).
 | ID | Title | Size | Phase | Status |
 | --- | --- | --- | --- | --- |
 | — | Decide: ETL branch / legacy framing / command panel / Phase-3 picks | — | 0 | needs you |
-| FEAT-15 | Portfolio-grade root README (+BUG-9, BUG-10) | S | 1 | new |
-| FEAT-16 | Open Graph image + per-page metadata, robots, sitemap | S | 1 | new |
-| FEAT-17 | Home covers all 8 tools + hero rewrite | S | 1 | new |
-| FEAT-6 | `/about` methodology page | S | 1 | open |
-| FEAT-19 | Footer, branded 404, error/loading boundaries (+BUG-12) | S | 1 | new |
-| FEAT-1 | CI: web job (+ Python if ETL merges) | S | 1 | open |
-| BUG-1 | Timezone-safe Treasury date parsing | S | 2 | open |
-| BUG-3 | Time scale for `LineChart` time axes | S | 2 | open |
-| BUG-4 | Heatmap date axis + color legend | S | 2 | open |
-| FEAT-18 | Command-panel guardrails + suggested prompts | S | 2 | new |
-| BUG-8 | Parallel fetch in `treasury/range` | S | 2 | open |
-| BUG-5 / BUG-6 | Portfolio `indexOf`, Stocks effect deps | S | 2 | open |
-| BUG-11 | Merge `Kpi` into `Metric` | S | 2 | open |
+| FEAT-15 | Portfolio-grade root README (+BUG-9, BUG-10) | S | 1 | ✅ done |
+| FEAT-16 | Open Graph image + per-page metadata, robots, sitemap | S | 1 | ✅ done |
+| FEAT-17 | Home covers all 8 tools + hero rewrite | S | 1 | ✅ done |
+| FEAT-6 | `/about` methodology page | S | 1 | ✅ done |
+| FEAT-19 | Footer, branded 404, error/loading boundaries (+BUG-12) | S | 1 | ✅ done |
+| FEAT-1 | CI: web + Python jobs | S | 1 | ✅ done |
+| BUG-1 | Timezone-safe Treasury date parsing | S | 2 | ✅ done |
+| BUG-3 | Time scale for `LineChart` time axes | S | 2 | ✅ done |
+| BUG-4 | Heatmap date axis + color legend | S | 2 | ✅ done |
+| FEAT-18 | Command-panel guardrails + suggested prompts | S | 2 | ✅ done |
+| BUG-8 | Parallel fetch in `treasury/range` | S | 2 | ✅ done |
+| BUG-5 / BUG-6 | Portfolio `indexOf`, Stocks effect deps | S | 2 | ✅ done |
+| BUG-11 | Merge `Kpi` into `Metric` (+ BUG-13 zero-crossing fill) | S | 2 | ✅ done |
 | FEAT-4 | URL-encoded shareable state (4a–4d) | M | 3 | open |
 | FEAT-8 | Curve shock builder (8a–8c) | M | 3 | open |
 | FEAT-14 | Key-rate durations (14a–14c) | M | 3 | open |
-| — | Visual QA, Lighthouse, portfolio write-up | S | 4 | new |
+| — | Visual QA ✅ · Lighthouse on prod, portfolio write-up, pin repo | S | 4 | needs you |
 
 Done already (no action): FEAT-2, FEAT-3, FEAT-9, BUG-7.

@@ -17,7 +17,7 @@
 ## Suggested order
 
 > **Current priority:** follow [PORTFOLIO-PLAN.md](PORTFOLIO-PLAN.md) (2026-10-14). It re-sequences
-> the items below for portfolio readiness and adds new briefs FEAT-15 … FEAT-19.
+> the items below for portfolio readiness and adds new briefs FEAT-15 … FEAT-19 (all done 2026-10-14).
 
 1. **Enablers** (unblock the design-system work + safety net): FEAT-1, FEAT-2, FEAT-3.
 2. **High-leverage, low-risk features**: FEAT-4, FEAT-5, FEAT-6, FEAT-7.
@@ -27,7 +27,7 @@
 
 ## A. Enablers (do these first)
 
-### FEAT-1 · CI workflow (test + lint + build gate) — **S**
+### FEAT-1 · CI workflow (test + lint + build gate) — **S** — ✅ DONE (`.github/workflows/ci.yml`)
 
 - **Goal:** every push/PR runs Python + web checks so the swarm can't silently break `main`.
 - **Why:** finished branches merge straight to `main` (no PR review). There's no automated gate.
@@ -99,12 +99,12 @@
   - **FEAT-5b** — `ExportButton` primitive + CSV download wired on one Card (e.g. Pricing scenario).
   - **FEAT-5c** — `exportSvg.ts` SVG→PNG + wire across chart Cards.
 
-### FEAT-6 · Methodology / "About the math" page — **S**
+### FEAT-6 · Methodology / "About the math" page — **S** — ✅ DONE (`/about`)
 
 - **Goal:** an `/about` route documenting conventions (continuous compounding, bootstrap, carry,
   PCA, NBER signal) with the formulas already in code comments.
 - **Why:** turns the analytics into a legible portfolio narrative; cheap, high signal.
-- **Files:** `web/app/about/page.tsx`; add to `Nav` `LINKS`.
+- **Files:** `web/app/about/page.tsx`; nav link via `NAV_LINKS` in `lib/tools.ts`.
 - **Approach:** static content; pull formula prose from the docstrings in `finance.ts`/`curve.ts`/
   `carry.ts`/`signal.ts`. No data fetching.
 - **Acceptance:** route builds static; linked from nav; renders the formulas/conventions.
@@ -114,7 +114,7 @@
 
 - **Goal:** keyboard-driven nav across the 8 tools; signals product polish.
 - **Files:** new `web/components/CommandPalette.tsx`; mount in `layout.tsx`.
-- **Approach:** hand-rolled (no dep): a modal listening for ⌘/Ctrl-K, filters the `LINKS` list,
+- **Approach:** hand-rolled (no dep): a modal listening for ⌘/Ctrl-K, filters `TOOLS` from `lib/tools.ts`,
   `router.push` on select. Reuse tokens; trap focus; Escape closes; respect reduced-motion.
 - **Acceptance:** ⌘K opens, arrow/enter navigates, a11y (focus trap + aria) holds; eslint green.
 - **Atomic:** one component + one mount; keep as a single task.

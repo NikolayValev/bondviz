@@ -17,7 +17,7 @@ BondViz is **two parallel codebases** in one repo:
 / `README.md` (which describe the Streamlit app) reflect where the work is — they predate the
 Vercel rebuild.
 
-Health baseline (2026-06-28): web `npm test` = **105 pass**, `npm run build` = **green**,
+Health baseline (2026-10-14): web `npm test` = **174 pass** (29 files), `npm run build` = **green**,
 `npx eslint .` = **clean**; Python `pytest` = **18 pass**.
 
 ---
@@ -57,8 +57,12 @@ React (`components/`, `app/`), and external I/O is isolated in `app/api/`.* Char
 ```
 web/
 ├── app/
-│   ├── layout.tsx            # root shell: fonts (IBM Plex), <Nav>, <main>, footer
-│   ├── page.tsx              # Home: hero + live KPI snapshot + nav cards (ISR, 1h revalidate)
+│   ├── layout.tsx            # root shell: fonts (IBM Plex), <Nav>, <main>, footer; root metadata
+│   ├── page.tsx              # Home: hero + live KPI snapshot + grouped tool cards (ISR, 1h revalidate)
+│   ├── about/page.tsx        # Methodology: conventions + every formula (static)
+│   ├── not-found / error / global-error / loading .tsx   # branded 404, error boundaries, skeleton
+│   ├── opengraph-image.tsx   # 1200×630 social card (static, Satori; colors from lib/brand.ts)
+│   ├── robots.ts, sitemap.ts # generated from lib/site.ts + lib/tools.ts
 │   ├── globals.css           # ★ ALL design tokens live here (CSS vars in :root) + Tailwind
 │   ├── PrefetchSignal.tsx    # warms the 35-yr spread cache on idle from Home
 │   ├── <route>/page.tsx      # server wrapper (metadata only)
@@ -66,10 +70,10 @@ web/
 │   ├── command-panel/data.ts # DataRegistry: the only metrics chat-generated widgets can read
 │   │   └── …/ChatPanel, ChatSession, DashboardPanel, chatStorage, layoutStorage, types, panelChrome
 │   └── api/
-│       ├── command-panel/route.ts      # POST chat → streamed widget proposals (GitHub Models)
+│       ├── command-panel/route.ts      # POST chat → streamed widget proposals (GitHub Models); token check, per-IP rate limit, size cap
 │       ├── command-panel/data/route.ts # POST read-only metric loads backing widget useMetric()
 │       ├── treasury/latest/route.ts    # GET → latest par-yield row
-│       ├── treasury/range/route.ts     # GET ?start&end → daily rows in window
+│       ├── treasury/range/route.ts     # GET ?start&end → daily rows in window (parallel per-year fetch)
 │       ├── treasury/spreads/route.ts   # GET ?start&end → slim spread points (parallel fetch)
 │       └── stocks/aggregates/route.ts  # GET ?ticker&from&to → daily bars (needs API key)
 ├── lib/                      # ★ pure logic, each with a .test.ts sibling
@@ -86,9 +90,13 @@ web/
 │   ├── spreadsCache.ts       # in-memory promise cache for the deep spread series
 │   ├── panelLayout.ts        # command-panel dashboard grid math (span/height clamp, persist)
 │   ├── chatStore.ts          # command-panel conversation index (create/rename/delete/evict)
+│   ├── tools.ts              # ★ the tool registry: Nav, Home, sitemap and page metadata read it
+│   ├── site.ts               # canonical URL, author/source links, pageMetadata()/rootMetadata
+│   ├── brand.ts              # literal token hex for the OG renderer (test guards drift)
+│   ├── rateLimit.ts          # fixed-window per-key limiter (command-panel chat route)
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
-│   ├── Nav.tsx               # sticky top nav + mobile hamburger (the LINKS array is the menu)
+│   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)
 │   ├── ui/                   # Card, Metric, Segmented, Skeleton  (design-system primitives)
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
 │                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
@@ -114,6 +122,7 @@ web/
 | `/pca` | `PcaClient` | `pca`, `finance` | `/api/treasury/range` (1–5yr) | LineChart ×2 |
 | `/stocks` | `StocksClient` | `polygon` types | `/api/stocks/aggregates` | LineChart |
 | `/command-panel` | `CommandPanelClient` (browser-only mount) | registry in `command-panel/data.ts` → `treasury`, `finance`, `curve`, `carry`, `signal` | `/api/command-panel` (chat, needs `GITHUB_MODELS_TOKEN`) + `/api/command-panel/data` | LLM-proposed widgets (`@nikolayvalev/command-panel`; see `docs/DECISIONS-command-panel.md`) |
+| `/about` | `page.tsx` (static, server) | — (prose from lib docstrings) | none | none (formula blocks) |
 
 ---
 
@@ -132,7 +141,8 @@ Every page in this app was built the same way. Follow it and you'll match the co
 3. **Page wrapper.** `app/<route>/page.tsx`:
    ```tsx
    import { FooClient } from "./FooClient";
-   export const metadata = { title: "Foo · BondViz" };
+   import { toolMetadata } from "@/lib/tools";
+   export const metadata = toolMetadata("/foo"); // title, description, canonical, link preview
    export default function FooPage() { return <FooClient />; }
    ```
 4. **Client component.** `app/<route>/FooClient.tsx` (`"use client"`): hold state with
@@ -142,8 +152,9 @@ Every page in this app was built the same way. Follow it and you'll match the co
 5. **Charts.** Reuse a chart in `components/charts/`. If you need a new one, copy the shape of
    `LineChart.tsx`: `useResizeObserver` for width, `useMemo` for scales/paths, React renders the
    `<svg>`, `role="img"` + `aria-label`, colors from CSS vars (see Design System doc).
-6. **Wire up nav + home.** Add to the `LINKS` array in `components/Nav.tsx` and (optionally) a
-   `<Card>` link on `app/page.tsx`.
+6. **Register the tool.** Add one entry to `TOOLS` in `lib/tools.ts` (href, nav label, title,
+   description, group). Nav, the Home cards, the sitemap and `toolMetadata` all read it, and
+   `tools.test.ts` checks the route exists.
 7. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
 
 There are full worked examples of this exact flow in `docs/superpowers/specs/*` (design) and
@@ -175,8 +186,8 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 - **U.S. Treasury daily par-yield XML** — keyless. `treasury.ts` fetches per calendar year,
   strips namespaces, coerces dates, emits `BC_*` columns (`BC_10YEAR`, …). Past years cached 7d,
-  current year cached 1h. A multi-year span = one fetch per year (parallel in `spreads`,
-  sequential in `range`).
+  current year cached 1h. A multi-year span = one fetch per year, in parallel (`spreads`, `range`).
+  Dates are taken from the feed's calendar string, never round-tripped through local time.
 - **Polygon.io** — daily stock bars. Needs `POLYGON_API_KEY`. Read only in the server route.
 - **Tenor canonicalization** lives in `finance.ts`: `TENOR_YEARS`, `BC_TO_TENOR`. Any code that
   maps yield columns to maturities must go through these (mirrors `visualizer.py`).
@@ -185,14 +196,14 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 ## Testing & tooling
 
-- **Vitest** (`npm test`), jsdom env, Testing Library for components. 18 test files, 105 tests.
+- **Vitest** (`npm test`), jsdom env, Testing Library for components. 29 test files, 174 tests.
   Every `lib/*.ts` has a sibling `*.test.ts`; charts have render/smoke tests; API routes stub
   `fetch` with `vi.stubGlobal`.
 - **ESLint** via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`). Run with
   `npx eslint .` or `npm run lint` — **not** `next lint` (removed in Next 16).
 - **Build**: `npm run build` (Turbopack). TypeScript `strict` is on.
-- **No CI yet** — there is no GitHub Actions workflow. Tests/build/lint are run manually. (See
-  BACKLOG.)
+- **CI**: `.github/workflows/ci.yml` runs on every push and PR. The web job runs `npm test`,
+  `npx eslint .`, `npx tsc --noEmit` and `npm run build`; the Python job runs `pytest`.
 
 ## Process conventions (how features get built here)
 

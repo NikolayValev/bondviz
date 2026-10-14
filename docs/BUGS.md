@@ -5,6 +5,11 @@
 >
 > Baseline at review time: web 105 tests pass, build + eslint clean; Python 18 tests pass. **None
 > of these break the build or current tests** — they are latent correctness, polish, and debt.
+>
+> **Status 2026-10-14:** every item below is fixed (see each heading); web 174 tests pass. Two more
+> found and fixed in the portfolio pass: an unlayered `a { color: inherit }` in `globals.css` that
+> overrode every Tailwind color utility on links, and the pricing coupon-frequency control wrapping
+> into a stacked blob in its half-width cell.
 
 ## Severity legend
 
@@ -16,7 +21,7 @@
 
 ## P1 — Correctness
 
-### BUG-1 · Timezone-dependent Treasury date parsing
+### BUG-1 · Timezone-dependent Treasury date parsing — ✅ FIXED (2026-10-14: `toIsoDate()` + TZ tests)
 
 - **Where:** `web/lib/treasury.ts:26-29` (`new Date(rawDate).toISOString().slice(0,10)`); same
   shape in `polygon.ts` is safe because its input is epoch-ms.
@@ -28,7 +33,7 @@
 - **Fix:** parse the date components explicitly (take the `YYYY-MM-DD` prefix, or construct with
   `Date.UTC(...)`), don't round-trip through local time. Add a test that sets `TZ=Asia/Tokyo`.
 
-### BUG-2 · `next lint` script is broken on Next 16
+### BUG-2 · `next lint` script is broken on Next 16 — ✅ FIXED (2026-10-14: docs (README, web/README, ARCHITECTURE) all say `npx eslint .`)
 
 - **Where:** `web/README.md` and any agent muscle-memory; `package.json` `scripts.lint` = `eslint`.
 - **Problem:** `next lint` was **removed in Next 16** — running it errors with
@@ -41,7 +46,7 @@
 
 ## P2 — Polish / UX / minor correctness
 
-### BUG-3 · `LineChart` uses a linear scale for time axes
+### BUG-3 · `LineChart` uses a linear scale for time axes — ✅ FIXED (2026-10-14: `scaleUtc` for `xType="time"`)
 
 - **Where:** `web/components/charts/LineChart.tsx:45` — always `scaleLinear()`, even when
   `xType="time"`. `SpreadHistoryChart.tsx` correctly uses `scaleTime`.
@@ -52,7 +57,7 @@
 - **Fix:** branch on `xType`: use `scaleTime()` (from `d3-scale`) for time, `scaleLinear()`
   otherwise; format ticks from the time scale.
 
-### BUG-4 · Heatmap has no date (row) axis or color legend
+### BUG-4 · Heatmap has no date (row) axis or color legend — ✅ FIXED (2026-10-14: date axis + min→max colorbar)
 
 - **Where:** `web/components/charts/Heatmap.tsx` (renders tenor labels only) + blurb in
   `YieldCurveClient.tsx` that says "each row is a date (old → new)".
@@ -61,7 +66,7 @@
 - **Fix:** add sparse y-axis date ticks (first/last + a few in between) and a small min→max
   colorbar legend using the same `colorRamp`.
 
-### BUG-5 · `PortfolioClient` resolves per-holding metrics by `indexOf`
+### BUG-5 · `PortfolioClient` resolves per-holding metrics by `indexOf` — ✅ FIXED (2026-10-14: map index)
 
 - **Where:** `web/app/portfolio/PortfolioClient.tsx:109` —
   `metrics.holdings[holdings.indexOf(h)]`.
@@ -70,7 +75,7 @@
 - **Fix:** iterate with the map index (`holdings.map((h, i) => … metrics.holdings[i])`) since
   `portfolioMetrics` preserves input order.
 
-### BUG-6 · Stocks fetch effect depends on the whole `cache` object
+### BUG-6 · Stocks fetch effect depends on the whole `cache` object — ✅ FIXED (2026-10-14: cache read via ref)
 
 - **Where:** `web/app/stocks/StocksClient.tsx:74` — effect deps include `cache`.
 - **Problem:** every cache write re-runs the effect for all tickers; it's guarded by a
@@ -92,7 +97,7 @@
   (Same work as **FEAT-2**.) **Done:** all chart/series colors (plus the Segmented selected-state
   ink/ring) now come from CSS-var tokens; `grep` for hex in `web/app`/`web/components` is clean.
 
-### BUG-8 · `treasury/range` fetches years sequentially; `spreads` is parallel
+### BUG-8 · `treasury/range` fetches years sequentially; `spreads` is parallel — ✅ FIXED (2026-10-14: `Promise.all` + route test)
 
 - **Where:** `web/app/api/treasury/range/route.ts:15-18` (for-loop `await`) vs
   `spreads/route.ts:19` (`Promise.all`).
@@ -100,7 +105,7 @@
   parallel pattern already exists next door.
 - **Fix:** mirror `spreads`: `await Promise.all(years.map(y => fetchTreasuryYear(y).catch(()=>[])))`.
 
-### BUG-9 · Root `README.md` / `CLAUDE.md` describe only the Streamlit app
+### BUG-9 · Root `README.md` / `CLAUDE.md` describe only the Streamlit app — ✅ FIXED (2026-10-14: README rewritten around the web app)
 
 - **Where:** repo-root `README.md`, `CLAUDE.md`.
 - **Problem:** they predate the Vercel rebuild and present Streamlit as the product; an agent
@@ -109,13 +114,13 @@
   Streamlit reference" banner at the top of both, pointing to `docs/ARCHITECTURE.md`. (`CLAUDE.md`
   banner added during the review; `README.md` still needs the same treatment.)
 
-### BUG-10 · `web/README.md` page list is stale
+### BUG-10 · `web/README.md` page list is stale — ✅ FIXED (2026-10-14: lists every route)
 
 - **Where:** `web/README.md:3-5` — "Home, Yield Curve explorer, and Bond Pricing".
 - **Problem:** the app now also has Carry, Signal, Portfolio, PCA, Stocks. Doc drift.
 - **Fix:** update to the current 8-route list (see ARCHITECTURE.md table).
 
-### BUG-11 · `Kpi` and `Metric` primitives overlap
+### BUG-11 · `Kpi` and `Metric` primitives overlap — ✅ FIXED (2026-10-14: `Kpi` removed)
 
 - **Where:** `web/components/ui/Kpi.tsx` vs `Metric.tsx`.
 - **Problem:** two primitives do nearly the same job; `Kpi` is the older/simpler one and is now
@@ -123,14 +128,14 @@
 - **Fix:** fold `Kpi` usages into `Metric` and delete `Kpi`, or keep one deliberately. Do it as
   part of the restyle.
 
-### BUG-12 · No route-level `loading.tsx` / `error.tsx`
+### BUG-12 · No route-level `loading.tsx` / `error.tsx` — ✅ FIXED (2026-10-14: root `loading`/`error`/`global-error`/`not-found`)
 
 - **Where:** `web/app/**` — pages handle their own loading/error inside the client component.
 - **Problem:** initial navigation shows nothing until the client mounts; an uncaught render error
   has no boundary. Not wrong, but below App-Router norms.
 - **Fix:** add `loading.tsx` skeletons and an `error.tsx` boundary per route (or a shared one).
 
-### BUG-13 · `SpreadHistoryChart` inversion fill doesn't interpolate zero-crossings
+### BUG-13 · `SpreadHistoryChart` inversion fill doesn't interpolate zero-crossings — ✅ FIXED (2026-10-14: `withZeroCrossings()`)
 
 - **Where:** `web/components/charts/SpreadHistoryChart.tsx:45-48` (carried over as a known MINOR in
   `.superpowers/sdd/progress.md` Task 3).
