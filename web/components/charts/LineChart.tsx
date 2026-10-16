@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { scaleLinear, scaleUtc } from "d3-scale";
 import { line } from "d3-shape";
 import { extent } from "d3-array";
@@ -26,7 +26,7 @@ export interface LineChartProps {
 
 const M = { top: 12, right: 16, bottom: 36, left: 48 };
 
-export function LineChart(props: LineChartProps) {
+export const LineChart = memo(function LineChart(props: LineChartProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
   const height = props.height ?? 280;
@@ -69,58 +69,62 @@ export function LineChart(props: LineChartProps) {
   }, [props.series, props.zeroBaseline, props.xType, props.yUnit, width, height]);
 
   return (
-    <div ref={ref} className="w-full" style={{ minHeight: height }}>
-      {content && (
-        <svg
-          width={width}
-          height={height}
-          role="img"
-          aria-label={props.ariaLabel}
-          className="overflow-visible"
-        >
-          <g transform={`translate(${M.left},${M.top})`}>
-            {content.yTicks.map((t) => (
-              <g key={`y${t}`} transform={`translate(0,${content.y(t)})`}>
-                <line x1={0} x2={content.iw} stroke="var(--grid)" />
-                <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
-                  {content.fmtY(t)}
+    <div className="w-full">
+      {/* The plot box reserves its height before the width is measured, so the legend below
+          doesn't jump down when the SVG appears (layout shift). */}
+      <div ref={ref} style={{ minHeight: height }}>
+        {content && (
+          <svg
+            width={width}
+            height={height}
+            role="img"
+            aria-label={props.ariaLabel}
+            className="overflow-visible"
+          >
+            <g transform={`translate(${M.left},${M.top})`}>
+              {content.yTicks.map((t) => (
+                <g key={`y${t}`} transform={`translate(0,${content.y(t)})`}>
+                  <line x1={0} x2={content.iw} stroke="var(--grid)" />
+                  <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
+                    {content.fmtY(t)}
+                  </text>
+                </g>
+              ))}
+              {content.xTicks.map((t) => (
+                <g key={`x${t}`} transform={`translate(${content.x(t)},${content.ih})`}>
+                  <line y1={0} y2={6} stroke="var(--muted)" />
+                  <text y={20} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabnum">
+                    {content.fmtX(t)}
+                  </text>
+                </g>
+              ))}
+              {props.zeroBaseline && (
+                <line x1={0} x2={content.iw} y1={content.y(0)} y2={content.y(0)} stroke="var(--muted)" strokeDasharray="3 3" />
+              )}
+              {props.series.map((s) => (
+                <path
+                  key={s.id}
+                  className="series-line"
+                  d={content.gen(s.points) ?? ""}
+                  fill="none"
+                  stroke={s.color}
+                  strokeWidth={2}
+                />
+              ))}
+              {props.xLabel && (
+                <text x={content.iw / 2} y={content.ih + 32} textAnchor="middle" fontSize={12} fill="var(--muted)">
+                  {props.xLabel}
                 </text>
-              </g>
-            ))}
-            {content.xTicks.map((t) => (
-              <g key={`x${t}`} transform={`translate(${content.x(t)},${content.ih})`}>
-                <line y1={0} y2={6} stroke="var(--muted)" />
-                <text y={20} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabnum">
-                  {content.fmtX(t)}
+              )}
+              {props.yLabel && (
+                <text transform={`translate(${-36},${content.ih / 2}) rotate(-90)`} textAnchor="middle" fontSize={12} fill="var(--muted)">
+                  {props.yLabel}
                 </text>
-              </g>
-            ))}
-            {props.zeroBaseline && (
-              <line x1={0} x2={content.iw} y1={content.y(0)} y2={content.y(0)} stroke="var(--muted)" strokeDasharray="3 3" />
-            )}
-            {props.series.map((s) => (
-              <path
-                key={s.id}
-                className="series-line"
-                d={content.gen(s.points) ?? ""}
-                fill="none"
-                stroke={s.color}
-                strokeWidth={2}
-              />
-            ))}
-            {props.xLabel && (
-              <text x={content.iw / 2} y={content.ih + 32} textAnchor="middle" fontSize={12} fill="var(--muted)">
-                {props.xLabel}
-              </text>
-            )}
-            {props.yLabel && (
-              <text transform={`translate(${-36},${content.ih / 2}) rotate(-90)`} textAnchor="middle" fontSize={12} fill="var(--muted)">
-                {props.yLabel}
-              </text>
-            )}
-          </g>
-        </svg>
-      )}
+              )}
+            </g>
+          </svg>
+        )}
+      </div>
       {props.series.length > 1 && (
         <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
           {props.series.map((s) => (
@@ -133,4 +137,4 @@ export function LineChart(props: LineChartProps) {
       )}
     </div>
   );
-}
+});

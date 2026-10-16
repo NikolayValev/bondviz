@@ -63,15 +63,15 @@ export default function AboutPage() {
         </p>
         <p className="mt-3 text-sm text-[var(--muted)]">
           Built by{" "}
-          <a href={AUTHOR.url} className="text-[var(--accent)] hover:underline">
+          <a href={AUTHOR.url} className="text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
             {AUTHOR.name}
           </a>{" "}
           ·{" "}
-          <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="text-[var(--accent)] hover:underline">
+          <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
             Source on GitHub
           </a>{" "}
           ·{" "}
-          <Link href="/styleguide" className="text-[var(--accent)] hover:underline">
+          <Link href="/styleguide" className="text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
             Design system
           </Link>
         </p>
@@ -251,7 +251,7 @@ export default function AboutPage() {
           isolated in server routes that fail soft. Charts are hand-rolled: D3 computes scales and
           paths, and React renders the SVG. There&apos;s no charting library, and colors come from
           design tokens shared with the{" "}
-          <Link href="/styleguide" className="text-[var(--accent)] hover:underline">
+          <Link href="/styleguide" className="text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
             styleguide
           </Link>
           .

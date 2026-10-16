@@ -128,7 +128,7 @@
 - **Fix:** fold `Kpi` usages into `Metric` and delete `Kpi`, or keep one deliberately. Do it as
   part of the restyle.
 
-### BUG-12 · No route-level `loading.tsx` / `error.tsx` — ✅ FIXED (2026-10-14: root `loading`/`error`/`global-error`/`not-found`)
+### BUG-12 · No route-level `loading.tsx` / `error.tsx` — ✅ FIXED (2026-10-14: root `error`/`global-error`/`not-found`; a root `loading.tsx` was tried and removed on 2026-10-16 because it made static pages stream the skeleton first, a 0.13 CLS hit; pages keep their own data skeletons)
 
 - **Where:** `web/app/**` — pages handle their own loading/error inside the client component.
 - **Problem:** initial navigation shows nothing until the client mounts; an uncaught render error

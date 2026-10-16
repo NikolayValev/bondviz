@@ -8,6 +8,7 @@ import { loadSpreads } from "@/lib/spreadsCache";
 import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
 import { RelativeValuePanel, RV_WINDOWS, type RvWindow } from "./RelativeValuePanel";
+import { ScrollRegion } from "@/components/ui/ScrollRegion";
 
 const URL_DEFAULTS = { window: "10Y" as RvWindow };
 const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { window: oneOf(RV_WINDOWS.map((w) => w.label)) };
@@ -34,13 +35,26 @@ export function SignalClient() {
     return { status, episodes, total: forward.length, withRec };
   }, [points]);
 
-  if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
+  // The heading renders in every state (prerendered; LCP; heading on error).
+  const header = <h1 className="text-2xl">Inversion &amp; Recession Signal</h1>;
+  if (error)
+    return (
+      <div className="space-y-6">
+        {header}
+        <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>
+      </div>
+    );
   if (!view)
     return (
-      <div role="status" className="space-y-6">
-        <p className="text-[var(--muted)]">Loading 35 years of Treasury data… (first load can take a moment)</p>
-        <Skeleton className="h-24" />
-        <Skeleton className="h-96" />
+      <div className="space-y-6">
+        {header}
+        <div role="status" className="space-y-6">
+          <p className="text-[var(--muted)]">Loading every trading day since 1990… (the first load can take a moment)</p>
+          {/* Sized like the loaded page (status cards, history panel, chart) to avoid layout shift. */}
+          <Skeleton className="h-32" />
+          <Skeleton className="h-80" />
+          <Skeleton className="h-[30rem]" />
+        </div>
       </div>
     );
 
@@ -52,7 +66,7 @@ export function SignalClient() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl">Inversion &amp; Recession Signal</h1>
+      {header}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
@@ -92,7 +106,7 @@ export function SignalClient() {
 
       <Card>
         <h2 className="mb-3 text-lg">Inversion episodes (10y–3m)</h2>
-        <div className="overflow-x-auto">
+        <ScrollRegion label="Inversion episodes table">
           <table className="w-full text-sm tabnum">
             <thead>
               <tr className="text-left text-[var(--muted)]">
@@ -117,7 +131,7 @@ export function SignalClient() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
         <p className="mt-3 text-xs text-[var(--faint)]">
           An episode is a maximal run of days with 10y–3m ≤ 0. &ldquo;Recession ≤24m&rdquo; marks episodes that
           overlap an NBER recession or end no more than 24 months before one starts.

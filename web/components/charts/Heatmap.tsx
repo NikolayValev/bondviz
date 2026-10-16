@@ -1,5 +1,5 @@
 "use client";
-import { useId, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import { HEATMAP_STOPS as STOPS } from "@/lib/chartColors";
 
@@ -48,7 +48,7 @@ const fmtDate = (d: string) =>
     timeZone: "UTC",
   });
 
-export function Heatmap(props: HeatmapProps) {
+export const Heatmap = memo(function Heatmap(props: HeatmapProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
   const height = props.height ?? 300;
@@ -145,4 +145,4 @@ export function Heatmap(props: HeatmapProps) {
       )}
     </div>
   );
-}
+});

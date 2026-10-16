@@ -10,6 +10,7 @@ import { iso, money, money0, signedPct } from "@/lib/format";
 import { SERIES } from "@/lib/chartColors";
 import { useUrlState } from "@/components/useUrlState";
 import { oneOf, text, type Schema } from "@/lib/urlState";
+import { ScrollRegion } from "@/components/ui/ScrollRegion";
 
 interface CacheEntry {
   configured: boolean;
@@ -211,7 +212,7 @@ export function StocksClient() {
 
               <Card>
                 <h2 className="mb-2 text-lg">Recent bars</h2>
-                <div className="overflow-x-auto">
+                <ScrollRegion label="Recent daily bars">
                   <table className="tabnum w-full text-sm">
                     <thead>
                       <tr className="text-left text-[var(--muted)]">
@@ -236,7 +237,7 @@ export function StocksClient() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ScrollRegion>
               </Card>
             </>
           )}

@@ -60,7 +60,8 @@ web/
 │   ├── layout.tsx            # root shell: fonts (IBM Plex), <Nav>, <main>, footer; root metadata
 │   ├── page.tsx              # Home: hero + live KPI snapshot + grouped tool cards (ISR, 1h revalidate)
 │   ├── about/page.tsx        # Methodology: conventions + every formula (static)
-│   ├── not-found / error / global-error / loading .tsx   # branded 404, error boundaries, skeleton
+│   ├── not-found / error / global-error .tsx   # branded 404 + error boundaries (no root loading.tsx: it made
+│   │                                            #   static pages stream a skeleton first → CLS 0.13)
 │   ├── opengraph-image.tsx   # 1200×630 social card (static, Satori; colors from lib/brand.ts)
 │   ├── robots.ts, sitemap.ts # generated from lib/site.ts + lib/tools.ts
 │   ├── globals.css           # ★ ALL design tokens live here (CSS vars in :root) + Tailwind

@@ -9,6 +9,7 @@ import { applyShock, benchmarkImpacts, shockBps, SHOCK_SIZES, SHOCKS, type Shock
 import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { signedPct } from "@/lib/format";
 import { CurvePoint } from "@/lib/types";
+import { ScrollRegion } from "@/components/ui/ScrollRegion";
 
 const BENCHMARKS = ["2Y", "5Y", "10Y", "30Y"];
 
@@ -110,7 +111,7 @@ export function ShockScenario({
         </div>
       </div>
 
-      <div className="mt-6 overflow-x-auto">
+      <ScrollRegion label="Benchmark bond reprices" className="mt-6">
         <table className="w-full text-sm tabnum">
           <caption className="eyebrow mb-2 text-left">Benchmark bonds (coupon = today&apos;s yield)</caption>
           <thead className="text-left text-[var(--muted)]">
@@ -138,7 +139,7 @@ export function ShockScenario({
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
     </Card>
   );
 }

@@ -92,8 +92,11 @@ export function PcaClient() {
 
       {error && <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>}
       {!error && !rows && (
-        <div role="status" aria-label="Loading Treasury data">
-          <Skeleton className="h-80" />
+        // Sized like the loaded cards (variance, loadings, scores) so the footer doesn't jump.
+        <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
         </div>
       )}
       {!error && rows && !result && (
