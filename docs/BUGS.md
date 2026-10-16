@@ -10,6 +10,11 @@
 > found and fixed in the portfolio pass: an unlayered `a { color: inherit }` in `globals.css` that
 > overrode every Tailwind color utility on links, and the pricing coupon-frequency control wrapping
 > into a stacked blob in its half-width cell.
+>
+> **2026-10-16:** an axe + Lighthouse pass found and fixed more: `--faint` failing AA contrast,
+> unlayered `.eyebrow` / focus / heading rules overriding utilities, chart legends jumping when the
+> SVG mounted (CLS), page headings hidden until data loaded (late LCP), and a root `loading.tsx`
+> that streamed a skeleton ahead of static pages (CLS 0.13). See the commit log for details.
 
 ## Severity legend
 

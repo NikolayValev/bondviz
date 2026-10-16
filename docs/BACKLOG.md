@@ -72,7 +72,7 @@
 
 ## B. High-leverage features
 
-### FEAT-4 · Shareable / bookmarkable state via URL query params — **M**
+### FEAT-4 · Shareable / bookmarkable state via URL query params — **M** — ✅ DONE (`lib/urlState.ts`, `useUrlState`)
 
 - **Goal:** encode page inputs (pricing bond, portfolio holdings, lookbacks, horizons) in the URL
   so a configured view can be linked/refreshed — a strong recruiter-facing touch.
@@ -110,7 +110,7 @@
 - **Acceptance:** route builds static; linked from nav; renders the formulas/conventions.
 - **Atomic:** single page; no split needed.
 
-### FEAT-7 · Command palette (⌘K) navigation — **S/M**
+### FEAT-7 · Command palette (⌘K) navigation — **S/M** — ✅ DONE (`components/CommandPalette.tsx`)
 
 - **Goal:** keyboard-driven nav across the 8 tools; signals product polish.
 - **Files:** new `web/components/CommandPalette.tsx`; mount in `layout.tsx`.
@@ -123,7 +123,7 @@
 
 ## C. Depth / showcase features
 
-### FEAT-8 · Curve scenario / shock builder — **M**
+### FEAT-8 · Curve scenario / shock builder — **M** — ✅ DONE (`lib/curveShocks.ts`, `/yield-curve`)
 
 - **Goal:** on `/yield-curve`, apply named shocks (parallel ±, bull/bear steepener/flattener,
   twist) to the live curve and overlay the shocked curve + reprice a sample bond.
@@ -174,7 +174,7 @@
 - **Acceptance:** N tickers → N normalized lines + legend; missing key still degrades gracefully.
 - **Atomic:** one client change; keep as a single task (depends on FEAT-2 for series colors).
 
-### FEAT-13 · Relative-value: spread z-scores vs history — **M**
+### FEAT-13 · Relative-value: spread z-scores vs history — **M** — ✅ DONE (`lib/relativeValue.ts`, `/signal`)
 
 - **Goal:** show current 2s10s / 3m10y vs their trailing distribution (z-score, percentile) using
   the deep history already cached.
@@ -185,7 +185,7 @@
   - **FEAT-13a** — `relativeValue.ts` z-score/percentile + test against a fixture.
   - **FEAT-13b** — render the readouts on `/signal` (or a new `/relative-value`).
 
-### FEAT-14 · Key-rate (partial) durations — **M**
+### FEAT-14 · Key-rate (partial) durations — **M** — ✅ DONE (`finance.keyRateDurations`, `/pricing`, `/portfolio`)
 
 - **Goal:** per-tenor key-rate durations on `/pricing` and `/portfolio` so risk shows by curve
   bucket, not just total duration.

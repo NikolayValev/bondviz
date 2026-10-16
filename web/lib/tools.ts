@@ -21,7 +21,7 @@ export const TOOLS: Tool[] = [
     href: "/yield-curve",
     nav: "Yield Curve",
     title: "Yield Curve Explorer",
-    description: "The live Treasury curve, shifts versus the past year, key spreads, a heatmap and a bootstrapped zero/forward curve.",
+    description: "The live Treasury curve, a curve-shock scenario builder, shifts versus the past year, key spreads, a heatmap and a bootstrapped zero/forward curve.",
     group: "Rates",
   },
   {
@@ -35,7 +35,7 @@ export const TOOLS: Tool[] = [
     href: "/signal",
     nav: "Signal",
     title: "Inversion & Recession Signal",
-    description: "Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, with each inversion episode.",
+    description: "Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion episode, and where today sits (z-score, percentile).",
     group: "Rates",
   },
   {
@@ -49,14 +49,14 @@ export const TOOLS: Tool[] = [
     href: "/pricing",
     nav: "Pricing",
     title: "Bond Pricing & Risk Lab",
-    description: "Price, duration, convexity, DV01, rate-shock scenarios and holding-period returns, all live as you type.",
+    description: "Price, duration, convexity, DV01, key-rate durations, rate-shock scenarios and holding-period returns, all live as you type.",
     group: "Risk",
   },
   {
     href: "/portfolio",
     nav: "Portfolio",
     title: "Portfolio Analyzer",
-    description: "Build a book of bonds and see value-weighted duration, convexity and DV01, then stress it with a rate shift.",
+    description: "Build a book of bonds and see value-weighted duration, convexity, DV01 and key-rate risk, then stress it with a rate shift.",
     group: "Risk",
   },
   {

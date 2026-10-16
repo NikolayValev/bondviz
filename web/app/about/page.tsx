@@ -14,12 +14,16 @@ const SECTIONS = [
   { id: "conventions", title: "Conventions" },
   { id: "data", title: "Data" },
   { id: "pricing", title: "Bond pricing & risk" },
+  { id: "krd", title: "Key-rate durations" },
   { id: "bootstrap", title: "Curve bootstrap" },
+  { id: "shocks", title: "Curve shocks" },
   { id: "carry", title: "Carry & roll-down" },
   { id: "signal", title: "Recession signal" },
+  { id: "relative", title: "Today vs history" },
   { id: "pca", title: "Yield-curve PCA" },
   { id: "portfolio", title: "Portfolio" },
   { id: "command", title: "Command panel" },
+  { id: "sharing", title: "Shareable links" },
   { id: "engineering", title: "How it's built" },
   { id: "limits", title: "Simplifications" },
 ];
@@ -157,6 +161,25 @@ export default function AboutPage() {
         </p>
       </Section>
 
+      <Section id="krd" title="Key-rate durations" tool="/pricing">
+        <p>
+          Duration says how much a bond moves for a <em>parallel</em> shift. Key-rate durations split
+          that into curve buckets: how much it moves when only one key tenor (3M, 6M, 1Y, 2Y, 3Y, 5Y,
+          7Y, 10Y, 20Y, 30Y) moves. Each key k gets a &quot;tent&quot; weight w<sub>k</sub>(t) that is 1
+          at its tenor and falls linearly to 0 at the neighbouring keys:
+        </p>
+        <Formula>
+          KRD<sub>k</sub> = Σ t<sub>i</sub> · w<sub>k</sub>(t<sub>i</sub>) · CF<sub>i</sub> · e<sup>−y·t<sub>i</sub></sup> / P
+          &nbsp;&nbsp;·&nbsp;&nbsp; Σ<sub>k</sub> w<sub>k</sub>(t) = 1 ⇒ Σ<sub>k</sub> KRD<sub>k</sub> = D
+        </Formula>
+        <p>
+          That is the exact limit of bumping one key rate by 1bp and repricing (the tests check it
+          against a ±1bp reprice). Because the tents sum to one, the buckets add back up to the
+          bond&apos;s duration, and their dollar DV01s to its DV01; the page shows that check under the
+          chart. A portfolio&apos;s key-rate DV01s are the holdings&apos; dollars added together.
+        </p>
+      </Section>
+
       <Section id="bootstrap" title="Curve bootstrap" tool="/yield-curve">
         <p>
           Par yields are interpolated linearly (flat beyond the ends) onto a half-year grid. Each node
@@ -172,6 +195,23 @@ export default function AboutPage() {
         <p>
           The explorer also shows the latest curve against 1, 3, 6 and 12 months ago, the 2s10s and
           3m10y spreads over time, and a date × tenor heatmap of the whole window.
+        </p>
+      </Section>
+
+      <Section id="shocks" title="Curve shocks" tool="/yield-curve">
+        <p>
+          The scenario builder applies named shapes to today&apos;s curve. Every shape is defined on
+          one coordinate, u(t): maturity on a log scale, −1 at 1M, 0 at a 5Y pivot and +1 at 30Y, so the
+          short tenors are spread out the way the curve is quoted. With size s in bps:
+        </p>
+        <Formula>
+          parallel ±s &nbsp;·&nbsp; bull steepener −s·(1−u)/2 &nbsp;·&nbsp; bear steepener +s·(1+u)/2
+          &nbsp;·&nbsp; bull flattener −s·(1+u)/2 &nbsp;·&nbsp; bear flattener +s·(1−u)/2 &nbsp;·&nbsp;
+          twist s·u &nbsp;·&nbsp; butterfly s·(2|u| − 1)
+        </Formula>
+        <p>
+          Benchmark 2Y, 5Y, 10Y and 30Y bonds (coupon equal to today&apos;s yield) are repriced exactly
+          at their own tenor&apos;s shifted yield, next to the duration-convexity estimate.
         </p>
       </Section>
 
@@ -203,6 +243,21 @@ export default function AboutPage() {
           starts within 24 months of its end. Measuring from the end rather than the start correctly
           credits long inversions that run right up to a downturn. The NBER peak-to-trough dates since
           1990 are maintained by hand, and the chart shades them behind every daily spread since then.
+        </p>
+      </Section>
+
+      <Section id="relative" title="Today vs history" tool="/signal">
+        <p>
+          For each spread, today&apos;s value is scored against every trading day in the chosen window
+          (5Y, 10Y or since 1990):
+        </p>
+        <Formula>
+          z = (x<sub>today</sub> − mean) / σ &nbsp;&nbsp;·&nbsp;&nbsp; percentile = share of days with x ≤ x<sub>today</sub>
+        </Formula>
+        <p>
+          σ is the population standard deviation. Beyond ±1σ the page calls the curve steeper or
+          flatter than usual. Daily observations are heavily autocorrelated, so treat this as a
+          description of where today sits, not a significance test.
         </p>
       </Section>
 
@@ -244,6 +299,16 @@ export default function AboutPage() {
         </p>
       </Section>
 
+      <Section id="sharing" title="Shareable links">
+        <p>
+          Every configurable view keeps its inputs in the URL: a bond on the pricing page, a whole
+          portfolio, a curve shock, a lookback window. Only values that differ from the defaults are
+          written, and a missing or invalid value falls back to its default, so a link can be shared,
+          bookmarked or hand-edited. Press <kbd className="tabnum">⌘K</kbd> /{" "}
+          <kbd className="tabnum">Ctrl-K</kbd> anywhere to jump between tools.
+        </p>
+      </Section>
+
       <Section id="engineering" title="How it's built">
         <p>
           <strong>Next.js (App Router) · React · TypeScript (strict) · Tailwind CSS.</strong> All the
@@ -271,6 +336,8 @@ export default function AboutPage() {
           <li>The bootstrap interpolates par yields linearly; no spline or Nelson–Siegel fit.</li>
           <li>No day-count conventions, settlement lags or accrued interest; times are in exact years.</li>
           <li>The inversion signal is descriptive history, not a forecast.</li>
+          <li>Curve shocks are stylized shapes, not estimated from historical moves.</li>
+          <li>Key-rate durations bump a flat yield with tent weights rather than a fitted zero curve.</li>
         </ul>
       </Section>
     </div>
