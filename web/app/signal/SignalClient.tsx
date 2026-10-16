@@ -5,12 +5,19 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { SpreadHistoryChart } from "@/components/charts/SpreadHistoryChart";
 import { currentStatus, inversionEpisodes, NBER_RECESSIONS, SpreadPoint } from "@/lib/signal";
 import { loadSpreads } from "@/lib/spreadsCache";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
+import { RelativeValuePanel, RV_WINDOWS, type RvWindow } from "./RelativeValuePanel";
+
+const URL_DEFAULTS = { window: "10Y" as RvWindow };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { window: oneOf(RV_WINDOWS.map((w) => w.label)) };
 
 const bps = (pp: number | null) => (pp === null ? "—" : `${pp >= 0 ? "+" : ""}${(pp * 100).toFixed(0)} bps`);
 
 export function SignalClient() {
   const [points, setPoints] = useState<SpreadPoint[] | null>(null);
   const [error, setError] = useState(false);
+  const [url, setUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
 
   useEffect(() => {
     loadSpreads()
@@ -70,6 +77,8 @@ export function SignalClient() {
           <div className="mt-1 text-sm text-[var(--muted)]">secondary signal</div>
         </Card>
       </div>
+
+      {points && <RelativeValuePanel points={points} span={url.window} onSpan={(w) => setUrl({ window: w })} />}
 
       <Card>
         <h2 className="mb-2 text-lg">Spread history since 1990</h2>
