@@ -9,7 +9,9 @@ import { SERIES } from "@/lib/chartColors";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
-import type { ShockKind } from "@/lib/curveShocks";
+import { SHOCK_SIZES, SHOCKS, type ShockKind } from "@/lib/curveShocks";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
 import { ShockScenario } from "./ShockScenario";
 
 const COMPARE = [
@@ -18,6 +20,13 @@ const COMPARE = [
   { label: "6M ago", months: 6, color: SERIES[3] },
   { label: "1Y ago", months: 12, color: SERIES[4] },
 ];
+
+// The shock scenario's shape and size live in the URL: /yield-curve?shock=twist&bp=100
+const URL_DEFAULTS = { shock: "bear-steepener" as ShockKind, bp: 50 };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = {
+  shock: oneOf(SHOCKS.map((s) => s.kind)),
+  bp: oneOf(SHOCK_SIZES),
+};
 
 function nearest(rows: YieldRow[], target: string): YieldRow | null {
   if (rows.length === 0) return null;
@@ -34,7 +43,7 @@ function nearest(rows: YieldRow[], target: string): YieldRow | null {
 export function YieldCurveClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
   const [error, setError] = useState(false);
-  const [shock, setShock] = useState<{ kind: ShockKind; sizeBps: number }>({ kind: "bear-steepener", sizeBps: 50 });
+  const [url, setUrl, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
 
   useEffect(() => {
     const end = new Date();
@@ -129,9 +138,10 @@ export function YieldCurveClient() {
       <ShockScenario
         curve={view.latestCurve}
         date={view.latest.date}
-        kind={shock.kind}
-        sizeBps={shock.sizeBps}
-        onChange={setShock}
+        kind={url.shock}
+        sizeBps={url.bp}
+        onChange={({ kind, sizeBps }) => setUrl({ shock: kind, bp: sizeBps })}
+        shareUrl={shareUrl}
       />
 
       <Card>

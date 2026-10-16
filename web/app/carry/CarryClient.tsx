@@ -9,6 +9,8 @@ import { rowToCurve } from "@/lib/finance";
 import { SERIES } from "@/lib/chartColors";
 import { iso } from "@/lib/format";
 import { YieldRow } from "@/lib/types";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
 
 const HORIZONS = [
   { label: "1M", value: 1 / 12 },
@@ -16,6 +18,9 @@ const HORIZONS = [
   { label: "6M", value: 0.5 },
   { label: "1Y", value: 1 },
 ];
+
+const URL_DEFAULTS = { horizon: "3M" };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { horizon: oneOf(HORIZONS.map((h) => h.label)) };
 
 function summarize(points: CarryPoint[], horizonLabel: string): string {
   if (points.length === 0) return "No tenors longer than the horizon in this snapshot.";
@@ -27,7 +32,9 @@ function summarize(points: CarryPoint[], horizonLabel: string): string {
 export function CarryClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
   const [error, setError] = useState(false);
-  const [horizon, setHorizon] = useState(0.25);
+  const [url, setUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const horizon = HORIZONS.find((h) => h.label === url.horizon)?.value ?? 0.25;
+  const setHorizon = (v: number) => setUrl({ horizon: HORIZONS.find((h) => h.value === v)?.label ?? "3M" });
 
   useEffect(() => {
     const end = new Date();

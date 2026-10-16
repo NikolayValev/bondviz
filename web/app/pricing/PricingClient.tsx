@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
@@ -24,6 +24,9 @@ import {
 } from "@/lib/finance";
 import { money, money0, signedPct } from "@/lib/format";
 import { KeyRateRisk } from "@/components/KeyRateRisk";
+import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
+import { useUrlState } from "@/components/useUrlState";
+import { num, numSet, oneOf, type Schema } from "@/lib/urlState";
 
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}${money(Math.abs(v))}`;
 
@@ -69,17 +72,38 @@ const MODE = [
   { label: "From price", value: "yield" },
 ];
 
+// Every input lives in the URL (only values that differ from these defaults are written), so a
+// configured bond can be shared: /pricing?coupon=3&years=30&yield=4.5
+const URL_DEFAULTS = {
+  face: 1000, coupon: 5, yield: 4, years: 10, freq: 2 as 1 | 2 | 4, solve: "price" as "price" | "yield",
+  price: 1000, shifts: [25, 50, 100], horizon: 3, hshift: 0,
+};
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = {
+  face: num({ min: 0, max: 1e9 }),
+  coupon: num({ min: 0, max: 50 }),
+  yield: num({ min: 0, max: 50 }),
+  years: num({ min: 0.5, max: 100 }),
+  freq: oneOf([1, 2, 4] as const),
+  solve: oneOf(["price", "yield"] as const),
+  price: num({ min: 0.01, max: 1e9 }),
+  shifts: numSet(MAGNITUDES),
+  horizon: num({ min: 0, max: 100 }),
+  hshift: num({ min: -1000, max: 1000 }),
+};
+
 export function PricingClient() {
-  const [face, setFace] = useState(1000);
-  const [couponPct, setCouponPct] = useState(5);
-  const [yieldPct, setYieldPct] = useState(4);
-  const [years, setYears] = useState(10);
-  const [freq, setFreq] = useState(2);
-  const [mode, setMode] = useState<"price" | "yield">("price");
-  const [marketPrice, setMarketPrice] = useState(1000);
-  const [mags, setMags] = useState<number[]>([25, 50, 100]);
-  const [horizon, setHorizon] = useState(3);
-  const [horizonShift, setHorizonShift] = useState(0);
+  const [s, set, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const { face, coupon: couponPct, yield: yieldPct, years, freq, solve: mode, price: marketPrice, shifts: mags, horizon, hshift: horizonShift } = s;
+  const setFace = (v: number) => set({ face: v });
+  const setCouponPct = (v: number) => set({ coupon: v });
+  const setYieldPct = (v: number) => set({ yield: v });
+  const setYears = (v: number) => set({ years: v });
+  const setFreq = (v: number) => set({ freq: v as 1 | 2 | 4 });
+  const setMode = (v: "price" | "yield") => set({ solve: v });
+  const setMarketPrice = (v: number) => set({ price: v });
+  const setMags = (v: number[]) => set({ shifts: v });
+  const setHorizon = (v: number) => set({ horizon: v });
+  const setHorizonShift = (v: number) => set({ hshift: v });
 
   const safe = (n: number) => (Number.isFinite(n) ? n : 0);
 
@@ -123,6 +147,9 @@ export function PricingClient() {
           Price, duration, convexity, DV01, scenario reprices and holding-period returns — interactive,
           with hand-rolled D3. Move any input and every chart updates live.
         </p>
+        <div className="mt-4">
+          <CopyLinkButton getUrl={shareUrl} />
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">

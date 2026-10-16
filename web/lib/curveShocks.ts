@@ -35,6 +35,9 @@ export const SHOCKS: { kind: ShockKind; label: string; description: string }[] =
   { kind: "butterfly", label: "Butterfly", description: "Wings rise while the 5Y belly falls (positive butterfly)." },
 ];
 
+/** Shock sizes offered in the UI, in bps. */
+export const SHOCK_SIZES = [10, 25, 50, 100] as const;
+
 const T_SHORT = 1 / 12;
 const T_PIVOT = 5;
 const T_LONG = 30;

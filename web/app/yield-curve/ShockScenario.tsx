@@ -5,11 +5,11 @@ import { Segmented } from "@/components/ui/Segmented";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { SERIES } from "@/lib/chartColors";
-import { applyShock, benchmarkImpacts, shockBps, SHOCKS, type ShockKind } from "@/lib/curveShocks";
+import { applyShock, benchmarkImpacts, shockBps, SHOCK_SIZES, SHOCKS, type ShockKind } from "@/lib/curveShocks";
+import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { signedPct } from "@/lib/format";
 import { CurvePoint } from "@/lib/types";
 
-const SIZES = [10, 25, 50, 100];
 const BENCHMARKS = ["2Y", "5Y", "10Y", "30Y"];
 
 const signedBps = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(0)} bps`;
@@ -21,12 +21,15 @@ export function ShockScenario({
   kind,
   sizeBps,
   onChange,
+  shareUrl,
 }: {
   curve: CurvePoint[];
   date: string;
   kind: ShockKind;
   sizeBps: number;
   onChange: (next: { kind: ShockKind; sizeBps: number }) => void;
+  /** When given, shows a "copy link" button for this scenario. */
+  shareUrl?: () => string;
 }) {
   const view = useMemo(() => {
     const spec = { kind, sizeBps };
@@ -53,10 +56,15 @@ export function ShockScenario({
 
   return (
     <Card>
-      <h2 className="text-lg">Scenario: shock the curve</h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Apply a named move to today&apos;s curve and see what it does to each tenor and to benchmark bonds.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg">Scenario: shock the curve</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Apply a named move to today&apos;s curve and see what it does to each tenor and to benchmark bonds.
+          </p>
+        </div>
+        {shareUrl && <CopyLinkButton getUrl={shareUrl} />}
+      </div>
 
       <div className="mt-4 space-y-3">
         <Segmented
@@ -70,7 +78,7 @@ export function ShockScenario({
           <span className="eyebrow">Size</span>
           <Segmented
             ariaLabel="Shock size in basis points"
-            options={SIZES.map((s) => ({ label: `${s} bp`, value: s }))}
+            options={SHOCK_SIZES.map((s) => ({ label: `${s} bp`, value: s }))}
             value={sizeBps}
             onChange={(v) => onChange({ kind, sizeBps: v as number })}
           />
