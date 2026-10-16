@@ -9,6 +9,8 @@ import { SERIES } from "@/lib/chartColors";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
+import type { ShockKind } from "@/lib/curveShocks";
+import { ShockScenario } from "./ShockScenario";
 
 const COMPARE = [
   { label: "1M ago", months: 1, color: SERIES[1] },
@@ -32,6 +34,7 @@ function nearest(rows: YieldRow[], target: string): YieldRow | null {
 export function YieldCurveClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
   const [error, setError] = useState(false);
+  const [shock, setShock] = useState<{ kind: ShockKind; sizeBps: number }>({ kind: "bear-steepener", sizeBps: 50 });
 
   useEffect(() => {
     const end = new Date();
@@ -122,6 +125,14 @@ export function YieldCurveClient() {
           yUnit="%"
         />
       </Card>
+
+      <ShockScenario
+        curve={view.latestCurve}
+        date={view.latest.date}
+        kind={shock.kind}
+        sizeBps={shock.sizeBps}
+        onChange={setShock}
+      />
 
       <Card>
         <h2 className="mb-2 text-lg">Zero & forward curve (bootstrapped)</h2>
