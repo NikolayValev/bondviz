@@ -5,9 +5,13 @@ import {
   bondCashflows,
   convexity,
   dv01,
+  keyRateDurations,
+  KEY_RATES,
   modifiedDuration,
   priceFromCashflows,
+  TENOR_YEARS,
   type BondParams,
+  type KeyRateDuration,
   type ScenarioRow,
 } from "@/lib/finance";
 
@@ -121,5 +125,22 @@ export function portfolioScenario(holdings: BondParams[], shiftsBps: number[]): 
       pctChange: base > 0 ? dollarChange / base : 0,
       approxPctChange: base > 0 ? approxDollar / base : 0,
     };
+  });
+}
+
+/**
+ * Portfolio key-rate risk. Dollar DV01s are additive across holdings; the portfolio's
+ * key-rate durations are those dollars over portfolio value, which equals the
+ * value-weighted average of the holdings' KRDs and sums to the weighted duration.
+ */
+export function portfolioKeyRates(holdings: BondParams[]): KeyRateDuration[] {
+  const perHolding = holdings.map((h) => {
+    const { cashflows, times } = bondCashflows(h.face, h.coupon, h.years, h.freq ?? 2);
+    return { value: priceFromCashflows(cashflows, times, h.yield_), krds: keyRateDurations(cashflows, times, h.yield_) };
+  });
+  const total = perHolding.reduce((a, h) => a + h.value, 0);
+  return KEY_RATES.map((label, k) => {
+    const dollar = perHolding.reduce((a, h) => a + h.krds[k].dv01, 0);
+    return { label, years: TENOR_YEARS[label], dv01: dollar, krd: total > 0 ? dollar / (total * 1e-4) : 0 };
   });
 }

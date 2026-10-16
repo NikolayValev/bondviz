@@ -14,6 +14,7 @@ import {
   discountedCashflows,
   dv01,
   horizonReturn,
+  keyRateDurations,
   modifiedDuration,
   priceFromCashflows,
   priceYieldCurve,
@@ -22,6 +23,7 @@ import {
   symmetricShifts,
 } from "@/lib/finance";
 import { money, money0, signedPct } from "@/lib/format";
+import { KeyRateRisk } from "@/components/KeyRateRisk";
 
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}${money(Math.abs(v))}`;
 
@@ -103,10 +105,11 @@ export function PricingClient() {
     const pyCurve = priceYieldCurve(f, coupon, yrs, freq, yields);
 
     const dcf = discountedCashflows(cashflows, times, y);
+    const krds = keyRateDurations(cashflows, times, y);
     const rows = scenarioShift({ face: f, coupon, yield_: y, years: yrs, freq }, symmetricShifts(mags));
     const hz = horizonReturn({ face: f, coupon, yield_: y, years: yrs, freq }, Math.min(horizon, yrs), horizonShift);
 
-    return { y, pv, dur, conv, dollar01, curY, annualCoupon, dropFor1pct, pyCurve, dcf, rows, hz, yrs };
+    return { y, pv, dur, conv, dollar01, curY, annualCoupon, dropFor1pct, pyCurve, dcf, krds, rows, hz, yrs };
   }, [face, couponPct, yieldPct, years, freq, mode, marketPrice, mags, horizon, horizonShift]);
 
   const incomeShare = m.hz.totalValue > 0 ? (m.hz.couponIncome / m.hz.totalValue) * 100 : 0;
@@ -199,6 +202,11 @@ export function PricingClient() {
           </div>
         </Card>
       </div>
+
+      {/* Key-rate risk */}
+      <Card className="rise">
+        <KeyRateRisk krds={m.krds} subject="this bond" />
+      </Card>
 
       {/* Scenario analysis */}
       <Card className="rise">

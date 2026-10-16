@@ -15,6 +15,8 @@ export interface CategoryBarChartProps {
   series: BarSeries[];
   ariaLabel: string;
   yUnit?: string;
+  /** Tick label formatter; defaults to whole numbers plus yUnit. */
+  formatY?: (v: number) => string;
   width?: number;
   height?: number;
 }
@@ -87,7 +89,7 @@ export function CategoryBarChart(props: CategoryBarChartProps) {
     return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw };
   }, [props.categories, props.series, width, height]);
 
-  const fmtY = (v: number) => `${Math.round(v)}${props.yUnit ?? ""}`;
+  const fmtY = props.formatY ?? ((v: number) => `${Math.round(v)}${props.yUnit ?? ""}`);
 
   return (
     <div ref={ref} className="w-full" style={{ minHeight: height }}>

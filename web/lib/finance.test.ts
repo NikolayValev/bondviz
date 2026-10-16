@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  TENOR_YEARS,
+  keyRateDurations,
+  keyRateWeight,
+  KEY_RATES,
   pvContinuous,
   bondCashflows,
   priceFromCashflows,
@@ -220,5 +224,69 @@ describe("spreadSeries", () => {
     ]);
     expect(twos10s[0][1]).toBeCloseTo(0.5, 9);
     expect(threeM10Y[0][1]).toBeCloseTo(-0.5, 9);
+  });
+});
+
+describe("keyRateWeight", () => {
+  const keys = [1, 2, 5, 10];
+  it("is 1 at its own key and 0 at the others", () => {
+    keys.forEach((t, k) => keys.forEach((_, j) => expect(keyRateWeight(t, keys, j)).toBe(j === k ? 1 : 0)));
+  });
+  it("interpolates linearly between neighbours and stays flat beyond the ends", () => {
+    expect(keyRateWeight(3.5, keys, 1)).toBeCloseTo(0.5, 12);
+    expect(keyRateWeight(3.5, keys, 2)).toBeCloseTo(0.5, 12);
+    expect(keyRateWeight(0.25, keys, 0)).toBe(1);
+    expect(keyRateWeight(30, keys, 3)).toBe(1);
+  });
+  it("sums to 1 at any time", () => {
+    for (const t of [0.1, 1, 1.7, 4, 7.3, 10, 25]) {
+      expect(keys.reduce((a, _, k) => a + keyRateWeight(t, keys, k), 0)).toBeCloseTo(1, 12);
+    }
+  });
+});
+
+describe("keyRateDurations", () => {
+  it.each([
+    [0.05, 0.04, 10, 2],
+    [0.03, 0.045, 30, 2],
+    [0.06, 0.05, 2, 4],
+    [0, 0.04, 7, 1],
+  ])("coupon %f, yield %f, %i years (freq %i): KRDs sum to modified duration", (c, y, yrs, f) => {
+    const { cashflows, times } = bondCashflows(100, c, yrs, f);
+    const krds = keyRateDurations(cashflows, times, y);
+    const total = krds.reduce((a, k) => a + k.krd, 0);
+    expect(total).toBeCloseTo(modifiedDuration(cashflows, times, y), 10);
+    const dv = krds.reduce((a, k) => a + k.dv01, 0);
+    expect(dv).toBeCloseTo(dv01(cashflows, times, y), 8);
+  });
+
+  it("matches bumping one key rate ±1bp and repricing", () => {
+    const { cashflows, times } = bondCashflows(100, 0.05, 10, 2);
+    const y = 0.045;
+    const keys = KEY_RATES.map((l) => TENOR_YEARS[l]);
+    const p0 = priceFromCashflows(cashflows, times, y);
+    const priced = (k: number, dy: number) =>
+      cashflows.reduce((a, cf, i) => a + cf * Math.exp(-(y + dy * keyRateWeight(times[i], keys, k)) * times[i]), 0);
+    keyRateDurations(cashflows, times, y).forEach((kr, k) => {
+      expect((priced(k, -1e-4) - priced(k, 1e-4)) / (2 * p0 * 1e-4)).toBeCloseTo(kr.krd, 5);
+    });
+  });
+
+  it("puts a zero-coupon bond's risk on the keys either side of its maturity", () => {
+    const { cashflows, times } = bondCashflows(100, 0, 4, 1); // one cashflow at 4y, between 3Y and 5Y keys
+    const krds = keyRateDurations(cashflows, times, 0.04);
+    const byLabel = Object.fromEntries(krds.map((k) => [k.label, k.krd]));
+    expect(byLabel["3Y"]).toBeCloseTo(4 * 0.5, 6);
+    expect(byLabel["5Y"]).toBeCloseTo(4 * 0.5, 6);
+    for (const l of KEY_RATES.filter((l) => l !== "3Y" && l !== "5Y")) expect(byLabel[l]).toBeCloseTo(0, 10);
+  });
+
+  it("concentrates a 10Y bullet's risk at 10Y, with coupons spread along the curve", () => {
+    const { cashflows, times } = bondCashflows(100, 0.05, 10, 2);
+    const krds = keyRateDurations(cashflows, times, 0.05);
+    const top = [...krds].sort((a, b) => b.krd - a.krd)[0];
+    expect(top.label).toBe("10Y");
+    expect(krds.find((k) => k.label === "20Y")?.krd).toBeCloseTo(0, 10);
+    expect(krds.find((k) => k.label === "2Y")!.krd).toBeGreaterThan(0);
   });
 });

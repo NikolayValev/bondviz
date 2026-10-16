@@ -5,7 +5,8 @@ import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
 import { ScenarioChart } from "@/components/charts/ScenarioChart";
 import { symmetricShifts, type BondParams } from "@/lib/finance";
-import { portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { portfolioKeyRates, portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { KeyRateRisk } from "@/components/KeyRateRisk";
 import { money, money0, signedPct } from "@/lib/format";
 
 interface Holding {
@@ -70,6 +71,7 @@ export function PortfolioClient() {
 
   const metrics = useMemo(() => portfolioMetrics(params), [params]);
   const rows = useMemo(() => portfolioScenario(params, symmetricShifts(mags)), [params, mags]);
+  const keyRates = useMemo(() => portfolioKeyRates(params), [params]);
 
   return (
     <div className="space-y-8">
@@ -160,6 +162,13 @@ export function PortfolioClient() {
           )}
         </div>
       </Card>
+
+      {/* Key-rate risk */}
+      {holdings.length > 0 && metrics.totalValue > 0 && (
+        <Card className="rise">
+          <KeyRateRisk krds={keyRates} subject="the portfolio" />
+        </Card>
+      )}
 
       {/* Portfolio scenario */}
       {holdings.length > 0 && (

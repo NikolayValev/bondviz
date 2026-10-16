@@ -118,6 +118,57 @@ export function scenarioShift(params: BondParams, shiftsBps: number[]): Scenario
   });
 }
 
+// --- Key-rate durations --------------------------------------------------------
+
+/** Key-rate tenors used for bucketed risk (labels from TENOR_YEARS). */
+export const KEY_RATES: TenorLabel[] = ["3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"];
+
+/** Weight of key k at time t: a "tent" that is 1 at key k and falls linearly to 0 at the
+ *  neighbouring keys (flat beyond the first and last). The weights sum to 1 at every t. */
+export function keyRateWeight(t: number, keys: number[], k: number): number {
+  const n = keys.length;
+  if (t <= keys[0]) return k === 0 ? 1 : 0;
+  if (t >= keys[n - 1]) return k === n - 1 ? 1 : 0;
+  const prev = keys[k - 1];
+  const next = keys[k + 1];
+  if (k > 0 && t > prev && t <= keys[k]) return (t - prev) / (keys[k] - prev);
+  if (k < n - 1 && t >= keys[k] && t < next) return (next - t) / (next - keys[k]);
+  return 0;
+}
+
+export interface KeyRateDuration {
+  label: TenorLabel;
+  years: number;
+  /** Partial duration: −(1/P)·∂P/∂(key rate), in years. */
+  krd: number;
+  /** Dollar value of a 1bp rise at this key rate alone. */
+  dv01: number;
+}
+
+/**
+ * Key-rate (partial) durations. Shifting the yield by a tent centred on key k moves each
+ * cashflow's rate by w_k(tᵢ)·Δy, so −(1/P)·∂P/∂Δy = Σ tᵢ·w_k(tᵢ)·CFᵢ·e^(−y·tᵢ) / P. That is the
+ * exact limit of bumping key k by 1bp and repricing. Because the tents sum to 1, the key-rate
+ * durations sum to the bond's modified duration: the parallel risk, split into curve buckets.
+ */
+export function keyRateDurations(
+  cashflows: number[],
+  times: number[],
+  yieldRate: number,
+  keyLabels: TenorLabel[] = KEY_RATES,
+): KeyRateDuration[] {
+  const keys = keyLabels.map((l) => TENOR_YEARS[l]);
+  const price = priceFromCashflows(cashflows, times, yieldRate);
+  return keyLabels.map((label, k) => {
+    let weighted = 0;
+    for (let i = 0; i < cashflows.length; i++) {
+      weighted += times[i] * keyRateWeight(times[i], keys, k) * cashflows[i] * Math.exp(-yieldRate * times[i]);
+    }
+    const krd = weighted / price;
+    return { label, years: keys[k], krd, dv01: krd * price * 1e-4 };
+  });
+}
+
 /** Turn selected ± magnitudes (bps) into a sorted symmetric set including 0. */
 export function symmetricShifts(magnitudes: number[]): number[] {
   const set = new Set<number>([0]);
