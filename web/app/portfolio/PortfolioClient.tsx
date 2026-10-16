@@ -57,7 +57,7 @@ function Num({ label, unit, value, onChange, step, min }: {
 }) {
   return (
     <label className="block">
-      <span className="eyebrow text-[0.6rem]">{label}</span>
+      <span className="eyebrow">{label}</span>
       <div className="mt-1 flex items-center rounded-lg border border-[var(--panel-border)] bg-[var(--bg)] focus-within:border-[var(--accent)]">
         <input
           type="number" value={Number.isFinite(value) ? value : ""} step={step} min={min}
@@ -159,7 +159,7 @@ export function PortfolioClient() {
                   <Num label="Yield" unit="%" value={h.yieldPct} step={0.25} min={0} onChange={(v) => update(h.id, { yieldPct: v })} />
                   <Num label="Maturity" unit="yr" value={h.years} step={1} min={0.5} onChange={(v) => update(h.id, { years: v })} />
                   <label className="block">
-                    <span className="eyebrow text-[0.6rem]">Freq</span>
+                    <span className="eyebrow">Freq</span>
                     <div className="mt-1">
                       <Segmented
                         ariaLabel="Coupon frequency"
