@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
+import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { Heatmap } from "@/components/charts/Heatmap";
@@ -109,6 +110,7 @@ const SPREAD_POINTS: SpreadPoint[] = [
 export function StyleguideClient() {
   const [seg, setSeg] = useState<string>("semi");
   const [multi, setMulti] = useState<number[]>([25, 50]);
+  const [chip, setChip] = useState<string>("Twist");
 
   return (
     <div className="space-y-10">
@@ -167,7 +169,7 @@ export function StyleguideClient() {
             </div>
           </Card>
           <Card>
-            <div className="eyebrow mb-3">Segmented · single & multi</div>
+            <div className="eyebrow mb-3">Segmented · single, multi & chips · CopyLinkButton</div>
             <div className="space-y-4">
               <Segmented
                 ariaLabel="Single select demo"
@@ -182,10 +184,19 @@ export function StyleguideClient() {
                 value={multi}
                 onChange={(v) => setMulti(v as number[])}
               />
+              <Segmented
+                ariaLabel="Chips variant demo"
+                variant="chips"
+                options={["Parallel +", "Bull steepener", "Bear flattener", "Twist", "Butterfly"].map((l) => ({ label: l, value: l }))}
+                value={chip}
+                onChange={(v) => setChip(v as string)}
+              />
               <p className="text-sm text-[var(--muted)]">
                 Selected: <span className="tabnum text-[var(--text)]">{seg}</span> ·{" "}
-                <span className="tabnum text-[var(--text)]">[{multi.join(", ")}]</span>
+                <span className="tabnum text-[var(--text)]">[{multi.join(", ")}]</span> ·{" "}
+                <span className="tabnum text-[var(--text)]">{chip}</span>
               </p>
+              <CopyLinkButton getUrl={() => window.location.href} />
             </div>
           </Card>
           <Card className="lg:col-span-2">

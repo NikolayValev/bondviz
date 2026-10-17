@@ -21,7 +21,7 @@ chart series colors, spacing, radii, and fonts are partly hardcoded.
 | **Fonts** | `web/app/layout.tsx` | `IBM_Plex_Sans` + `IBM_Plex_Mono` via `next/font/google`, exposed as `--font-plex-sans/mono`, aliased to `--font-sans/mono` in globals.css. |
 | **Background / grid / scrollbars / focus / animations** | `web/app/globals.css` | `.gridlines::before`, `body` radial gradients, `.rise`/`.menu-drop` keyframes, `::selection`, reduced-motion. |
 | **Radius** | `--radius: 14px` in globals.css **and** ad-hoc `rounded-lg`/`rounded-full` in components | Not fully tokenized. |
-| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Segmented`, `Skeleton`. |
+| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Segmented`, `Skeleton`, `ScrollRegion`, `CopyLinkButton`. |
 | **Chart styling** | `web/components/charts/*` | Axes/grid use `var(--*)`; **series colors are hardcoded hex** (the main gap). |
 | **Tailwind** | `@import "tailwindcss"` in globals.css; `postcss.config.mjs` | Tailwind **v4**, no `tailwind.config.js`. CSS vars are **not** registered as Tailwind theme tokens. |
 
@@ -30,7 +30,7 @@ chart series colors, spacing, radii, and fonts are partly hardcoded.
 ```
 Surfaces : --bg #070a10  --bg-2 #0a0e16  --panel #111620  --panel-2 #0d121b
 Borders  : --panel-border rgba(255,255,255,.08)  --panel-border-strong rgba(255,255,255,.16)
-Type     : --text #e8ecf2  --muted #8b95a7  --faint #5b6577
+Type     : --text #e8ecf2  --muted #8b95a7  --faint #778193  (faint raised from #5b6577 for ≥4.5:1 contrast, 2026-10-16)
 Brand    : --accent #00d68f  --accent-dim rgba(0,214,143,.14)
 Semantic : --pos #2fd98a  --neg #ff6b81  --warn #f2b65a
 Chart    : --grid rgba(255,255,255,.07)
@@ -43,9 +43,22 @@ Shape    : --radius 14px
 - **`Metric`** — labelled stat with `tone` (`accent|pos|neg|neutral`) and `size` (`md|lg`). The
   workhorse for KPIs.
 - **`Segmented`** — pill segmented control, single- or multi-select; used for every toggle
-  (frequency, horizon, lookback, shift magnitudes, active ticker).
+  (frequency, horizon, lookback, shift magnitudes, active ticker). `variant="chips"` drops the
+  shared pill track so long option lists (the eight curve shocks) wrap cleanly.
+- **`Skeleton`** — loading placeholder; size it like the content it replaces (no layout shift).
+- **`ScrollRegion`** — labelled, focusable horizontal scroller for wide tables (keyboard access).
+- **`CopyLinkButton`** — copies the current view's URL (inputs included) with live feedback.
 
-That's the entire component inventory. Everything else is inline Tailwind utilities.
+Feature components outside `ui/`: `KeyRateRisk`, `CommandPalette`, `LazyMount` (mounts heavy
+below-the-fold charts on approach). Everything else is inline Tailwind utilities.
+
+### CSS cascade rule (important)
+
+Tailwind v4 utilities live in `@layer utilities`. **Any rule in `globals.css` outside a layer beats
+every utility, whatever its specificity.** That silently broke link colors, `outline-none`, and
+eyebrow color/size overrides until 2026-10-16. Element resets and base type go in `@layer base`,
+reusable classes like `.eyebrow` in `@layer components`; leave rules unlayered only when nothing
+should ever override them.
 
 ## The two things that will fight your design-system swap
 

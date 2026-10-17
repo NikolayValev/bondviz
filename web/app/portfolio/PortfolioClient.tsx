@@ -1,29 +1,33 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { Segmented } from "@/components/ui/Segmented";
 import { ScenarioChart } from "@/components/charts/ScenarioChart";
 import { symmetricShifts, type BondParams } from "@/lib/finance";
-import { portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { portfolioKeyRates, portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { KeyRateRisk } from "@/components/KeyRateRisk";
+import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
+import { useUrlState } from "@/components/useUrlState";
+import { num, numSet, oneOf, records, text, type Schema } from "@/lib/urlState";
 import { money, money0, signedPct } from "@/lib/format";
 
-interface Holding {
-  id: string;
+interface Position {
   label: string;
   face: number;
   couponPct: number;
   yieldPct: number;
   years: number;
-  freq: number;
+  freq: 1 | 2 | 4;
 }
+/** A position plus a render key (its index in the book; the book itself lives in the URL). */
+type Holding = Position & { id: string };
 
-let nextId = 0;
-const mk = (label: string, face: number, couponPct: number, yieldPct: number, years: number): Holding => ({
-  id: `h${nextId++}`, label, face, couponPct, yieldPct, years, freq: 2,
+const mk = (label: string, face: number, couponPct: number, yieldPct: number, years: number): Position => ({
+  label, face, couponPct, yieldPct, years, freq: 2,
 });
 
-const SEED: Holding[] = [
+const SEED: Position[] = [
   mk("2Y Note", 50_000, 4.5, 4.6, 2),
   mk("5Y Note", 50_000, 4.0, 4.2, 5),
   mk("10Y Bond", 50_000, 5.0, 4.4, 10),
@@ -31,6 +35,21 @@ const SEED: Holding[] = [
 
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}$${money(Math.abs(v))}`;
 const MAGNITUDES = [25, 50, 100, 200];
+
+// The book and the stress shifts live in the URL, so a portfolio can be shared as a link:
+// /portfolio?book=2Y%20Note,50000,4.5,4.6,2,2~…
+const URL_DEFAULTS = { book: SEED, shifts: [25, 50, 100] };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = {
+  book: records<Position>({
+    label: text(40),
+    face: num({ min: 0, max: 1e10 }),
+    couponPct: num({ min: 0, max: 50 }),
+    yieldPct: num({ min: 0, max: 50 }),
+    years: num({ min: 0.5, max: 100 }),
+    freq: oneOf([1, 2, 4] as const),
+  }, 25),
+  shifts: numSet(MAGNITUDES),
+};
 const safe = (n: number) => (Number.isFinite(n) ? n : 0);
 
 function Num({ label, unit, value, onChange, step, min }: {
@@ -38,7 +57,7 @@ function Num({ label, unit, value, onChange, step, min }: {
 }) {
   return (
     <label className="block">
-      <span className="eyebrow text-[0.6rem]">{label}</span>
+      <span className="eyebrow">{label}</span>
       <div className="mt-1 flex items-center rounded-lg border border-[var(--panel-border)] bg-[var(--bg)] focus-within:border-[var(--accent)]">
         <input
           type="number" value={Number.isFinite(value) ? value : ""} step={step} min={min}
@@ -52,13 +71,18 @@ function Num({ label, unit, value, onChange, step, min }: {
 }
 
 export function PortfolioClient() {
-  const [holdings, setHoldings] = useState<Holding[]>(SEED);
-  const [mags, setMags] = useState<number[]>([25, 50, 100]);
+  const [s, set, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const mags = s.shifts;
+  const setMags = (v: number[]) => set({ shifts: v });
+  const holdings: Holding[] = useMemo(() => s.book.map((p, i) => ({ ...p, id: `h${i}` })), [s.book]);
 
-  const update = (id: string, patch: Partial<Holding>) =>
-    setHoldings((hs) => hs.map((h) => (h.id === id ? { ...h, ...patch } : h)));
-  const remove = (id: string) => setHoldings((hs) => hs.filter((h) => h.id !== id));
-  const add = () => setHoldings((hs) => [...hs, mk(`Bond ${hs.length + 1}`, 25_000, 4.5, 4.5, 7)]);
+  const strip = (h: Holding): Position => ({
+    label: h.label, face: h.face, couponPct: h.couponPct, yieldPct: h.yieldPct, years: h.years, freq: h.freq,
+  });
+  const update = (id: string, patch: Partial<Position>) =>
+    set({ book: holdings.map((h) => (h.id === id ? { ...strip(h), ...patch } : strip(h))) });
+  const remove = (id: string) => set({ book: holdings.filter((h) => h.id !== id).map(strip) });
+  const add = () => set({ book: [...s.book, mk(`Bond ${s.book.length + 1}`, 25_000, 4.5, 4.5, 7)] });
 
   const params: BondParams[] = useMemo(
     () => holdings.map((h) => ({
@@ -70,6 +94,7 @@ export function PortfolioClient() {
 
   const metrics = useMemo(() => portfolioMetrics(params), [params]);
   const rows = useMemo(() => portfolioScenario(params, symmetricShifts(mags)), [params, mags]);
+  const keyRates = useMemo(() => portfolioKeyRates(params), [params]);
 
   return (
     <div className="space-y-8">
@@ -80,6 +105,9 @@ export function PortfolioClient() {
           Combine multiple bonds and see aggregate market value, value-weighted duration, convexity,
           yield and DV01 — then stress the whole book with a parallel rate shift.
         </p>
+        <div className="mt-4">
+          <CopyLinkButton getUrl={shareUrl} />
+        </div>
       </header>
 
       {/* Aggregate metrics */}
@@ -131,13 +159,13 @@ export function PortfolioClient() {
                   <Num label="Yield" unit="%" value={h.yieldPct} step={0.25} min={0} onChange={(v) => update(h.id, { yieldPct: v })} />
                   <Num label="Maturity" unit="yr" value={h.years} step={1} min={0.5} onChange={(v) => update(h.id, { years: v })} />
                   <label className="block">
-                    <span className="eyebrow text-[0.6rem]">Freq</span>
+                    <span className="eyebrow">Freq</span>
                     <div className="mt-1">
                       <Segmented
                         ariaLabel="Coupon frequency"
                         options={[{ label: "1", value: 1 }, { label: "2", value: 2 }, { label: "4", value: 4 }]}
                         value={h.freq}
-                        onChange={(v) => update(h.id, { freq: v as number })}
+                        onChange={(v) => update(h.id, { freq: v as 1 | 2 | 4 })}
                       />
                     </div>
                   </label>
@@ -160,6 +188,13 @@ export function PortfolioClient() {
           )}
         </div>
       </Card>
+
+      {/* Key-rate risk */}
+      {holdings.length > 0 && metrics.totalValue > 0 && (
+        <Card className="rise">
+          <KeyRateRisk krds={keyRates} subject="the portfolio" />
+        </Card>
+      )}
 
       {/* Portfolio scenario */}
       {holdings.length > 0 && (

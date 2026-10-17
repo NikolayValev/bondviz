@@ -8,6 +8,9 @@ import { LineChart, Series } from "@/components/charts/LineChart";
 import { StockBar } from "@/lib/types";
 import { iso, money, money0, signedPct } from "@/lib/format";
 import { SERIES } from "@/lib/chartColors";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, text, type Schema } from "@/lib/urlState";
+import { ScrollRegion } from "@/components/ui/ScrollRegion";
 
 interface CacheEntry {
   configured: boolean;
@@ -21,6 +24,13 @@ const LOOKBACKS = [
   { label: "6M", value: 6 },
   { label: "1Y", value: 12 },
 ];
+
+const URL_DEFAULTS = { tickers: "AAPL, MSFT, GOOGL", lookback: "3M", active: "" };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = {
+  tickers: text(80),
+  lookback: oneOf(LOOKBACKS.map((l) => l.label)),
+  active: text(12),
+};
 
 function parseTickers(s: string): string[] {
   const seen = new Set<string>();
@@ -36,9 +46,13 @@ function parseTickers(s: string): string[] {
 }
 
 export function StocksClient() {
-  const [tickersInput, setTickersInput] = useState("AAPL, MSFT, GOOGL");
-  const [lookback, setLookback] = useState(3);
-  const [active, setActive] = useState<string | null>(null);
+  const [url, setUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const tickersInput = url.tickers;
+  const setTickersInput = (v: string) => setUrl({ tickers: v });
+  const lookback = LOOKBACKS.find((l) => l.label === url.lookback)?.value ?? 3;
+  const setLookback = (v: number) => setUrl({ lookback: LOOKBACKS.find((l) => l.value === v)?.label ?? "3M" });
+  const active = url.active || null;
+  const setActive = (v: string) => setUrl({ active: v });
   const [cache, setCache] = useState<Record<string, CacheEntry>>({});
 
   const tickers = useMemo(() => parseTickers(tickersInput), [tickersInput]);
@@ -198,7 +212,7 @@ export function StocksClient() {
 
               <Card>
                 <h2 className="mb-2 text-lg">Recent bars</h2>
-                <div className="overflow-x-auto">
+                <ScrollRegion label="Recent daily bars">
                   <table className="tabnum w-full text-sm">
                     <thead>
                       <tr className="text-left text-[var(--muted)]">
@@ -223,7 +237,7 @@ export function StocksClient() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ScrollRegion>
               </Card>
             </>
           )}

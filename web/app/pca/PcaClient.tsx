@@ -10,11 +10,23 @@ import { TENOR_YEARS } from "@/lib/finance";
 import { SERIES } from "@/lib/chartColors";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
 
 const COMPONENT_COLORS = [SERIES[0], SERIES[1], SERIES[2]];
 
+const LOOKBACKS = [
+  { label: "1Y", value: 1 },
+  { label: "2Y", value: 2 },
+  { label: "5Y", value: 5 },
+];
+const URL_DEFAULTS = { lookback: "2Y" };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { lookback: oneOf(LOOKBACKS.map((l) => l.label)) };
+
 export function PcaClient() {
-  const [years, setYears] = useState(2);
+  const [url, setUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const years = LOOKBACKS.find((l) => l.label === url.lookback)?.value ?? 2;
+  const setYears = (v: number) => setUrl({ lookback: LOOKBACKS.find((l) => l.value === v)?.label ?? "2Y" });
   // Track which lookback each result/error belongs to so switching windows shows
   // the loading state again (derived, rather than synchronously resetting state
   // inside the effect) and stale in-flight responses are ignored.
@@ -68,11 +80,7 @@ export function PcaClient() {
         <h1 className="text-2xl">Yield Curve PCA</h1>
         <Segmented
           ariaLabel="Lookback window"
-          options={[
-            { label: "1Y", value: 1 },
-            { label: "2Y", value: 2 },
-            { label: "5Y", value: 5 },
-          ]}
+          options={LOOKBACKS}
           value={years}
           onChange={(v) => setYears(v as number)}
         />
@@ -84,8 +92,11 @@ export function PcaClient() {
 
       {error && <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>}
       {!error && !rows && (
-        <div role="status" aria-label="Loading Treasury data">
-          <Skeleton className="h-80" />
+        // Sized like the loaded cards (variance, loadings, scores) so the footer doesn't jump.
+        <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
         </div>
       )}
       {!error && rows && !result && (

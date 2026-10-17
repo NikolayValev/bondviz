@@ -10,6 +10,11 @@
 > found and fixed in the portfolio pass: an unlayered `a { color: inherit }` in `globals.css` that
 > overrode every Tailwind color utility on links, and the pricing coupon-frequency control wrapping
 > into a stacked blob in its half-width cell.
+>
+> **2026-10-16:** an axe + Lighthouse pass found and fixed more: `--faint` failing AA contrast,
+> unlayered `.eyebrow` / focus / heading rules overriding utilities, chart legends jumping when the
+> SVG mounted (CLS), page headings hidden until data loaded (late LCP), and a root `loading.tsx`
+> that streamed a skeleton ahead of static pages (CLS 0.13). See the commit log for details.
 
 ## Severity legend
 
@@ -128,7 +133,7 @@
 - **Fix:** fold `Kpi` usages into `Metric` and delete `Kpi`, or keep one deliberately. Do it as
   part of the restyle.
 
-### BUG-12 · No route-level `loading.tsx` / `error.tsx` — ✅ FIXED (2026-10-14: root `loading`/`error`/`global-error`/`not-found`)
+### BUG-12 · No route-level `loading.tsx` / `error.tsx` — ✅ FIXED (2026-10-14: root `error`/`global-error`/`not-found`; a root `loading.tsx` was tried and removed on 2026-10-16 because it made static pages stream the skeleton first, a 0.13 CLS hit; pages keep their own data skeletons)
 
 - **Where:** `web/app/**` — pages handle their own loading/error inside the client component.
 - **Problem:** initial navigation shows nothing until the client mounts; an uncaught render error

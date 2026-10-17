@@ -7,7 +7,7 @@ export const BRAND_HEX = {
   panel: "#111620",
   text: "#e8ecf2",
   muted: "#8b95a7",
-  faint: "#5b6577",
+  faint: "#778193",
   accent: "#00d68f",
   series2: "#5b8def",
 } as const;

@@ -15,6 +15,12 @@ pricing frequency control collapsing, and a Signal footnote that misstated the 2
 Still open: the **decisions** below, **Phase 3** (pick 2–3) and the parts of **Phase 4** that
 need you (Lighthouse on production, the portfolio write-up, pinning the repo).
 
+**2026-10-16:** Phase 3 done in full rather than a pick of 2–3: FEAT-8 (curve shocks), FEAT-14
+(key-rate durations), FEAT-4 (shareable URLs) and FEAT-13 (spread z-scores), plus FEAT-7 (⌘K
+palette). Phase 4's QA is done too: zero axe violations on every route; Lighthouse a11y / best
+practices / SEO 100 and performance 95–99 (local production build). What's left needs you:
+production Lighthouse, the portfolio write-up, pinning the repo, and the ETL-branch decision.
+
 ## Where things stood (audit, 2026-10-14)
 
 | Check | Result |
@@ -194,9 +200,12 @@ better story), FEAT-11 (light mode), auth (no user value for a public demo).
 | BUG-8 | Parallel fetch in `treasury/range` | S | 2 | ✅ done |
 | BUG-5 / BUG-6 | Portfolio `indexOf`, Stocks effect deps | S | 2 | ✅ done |
 | BUG-11 | Merge `Kpi` into `Metric` (+ BUG-13 zero-crossing fill) | S | 2 | ✅ done |
-| FEAT-4 | URL-encoded shareable state (4a–4d) | M | 3 | open |
-| FEAT-8 | Curve shock builder (8a–8c) | M | 3 | open |
-| FEAT-14 | Key-rate durations (14a–14c) | M | 3 | open |
-| — | Visual QA ✅ · Lighthouse on prod, portfolio write-up, pin repo | S | 4 | needs you |
+| FEAT-4 | URL-encoded shareable state (4a–4d) | M | 3 | ✅ done |
+| FEAT-8 | Curve shock builder (8a–8c) | M | 3 | ✅ done |
+| FEAT-14 | Key-rate durations (14a–14c) | M | 3 | ✅ done |
+| FEAT-13 | Spread z-scores / percentiles on /signal | M | 3 | ✅ done |
+| FEAT-7 | ⌘K command palette | S/M | 3 | ✅ done |
+| — | Accessibility (axe) + Lighthouse pass | S | 4 | ✅ done |
+| — | Lighthouse on prod, portfolio write-up, pin repo | S | 4 | needs you |
 
 Done already (no action): FEAT-2, FEAT-3, FEAT-9, BUG-7.

@@ -80,40 +80,44 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
   }, [props.points, props.recessions, width, height]);
 
   return (
-    <div ref={ref} className="w-full" style={{ minHeight: height }}>
-      {c && (
-        <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
-          <g transform={`translate(${M.left},${M.top})`}>
-            {/* recession bands (behind everything) */}
-            {c.recBands.map((b) => (
-              <rect key={b.key} className="recession" x={b.x} y={0} width={b.w} height={c.ih} fill="var(--muted)" opacity={0.12} />
-            ))}
-            {/* y grid + labels */}
-            {c.yTicks.map((t) => (
-              <g key={`y${t}`} transform={`translate(0,${c.y(t)})`}>
-                <line x1={0} x2={c.iw} stroke="var(--grid)" />
-                <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">{t}</text>
-              </g>
-            ))}
-            {/* x ticks */}
-            {c.xTicks.map((t) => (
-              <g key={`x${+t}`} transform={`translate(${c.x(t)},${c.ih})`}>
-                <line y1={0} y2={6} stroke="var(--faint)" />
-                <text y={20} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabnum">
-                  {new Date(+t).getUTCFullYear()}
-                </text>
-              </g>
-            ))}
-            {/* inversion fill (red, below zero) */}
-            <path className="inversion-fill" d={c.invArea(c.s10Fill) ?? ""} fill="var(--neg)" opacity={0.18} />
-            {/* zero baseline */}
-            <line x1={0} x2={c.iw} y1={c.zeroY} y2={c.zeroY} stroke="var(--panel-border-strong)" strokeDasharray="3 3" />
-            {/* series */}
-            <path className="series-2s10s" d={c.lineGen(c.s2) ?? ""} fill="none" stroke={SERIES[1]} strokeWidth={1.5} opacity={0.85} />
-            <path className="series-10y3m" d={c.lineGen(c.s10) ?? ""} fill="none" stroke="var(--accent)" strokeWidth={2} />
-          </g>
-        </svg>
-      )}
+    <div className="w-full">
+      {/* The plot box reserves its height before the width is measured, so the legend below
+          doesn't jump down when the SVG appears (layout shift). */}
+      <div ref={ref} style={{ minHeight: height }}>
+        {c && (
+          <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
+            <g transform={`translate(${M.left},${M.top})`}>
+              {/* recession bands (behind everything) */}
+              {c.recBands.map((b) => (
+                <rect key={b.key} className="recession" x={b.x} y={0} width={b.w} height={c.ih} fill="var(--muted)" opacity={0.12} />
+              ))}
+              {/* y grid + labels */}
+              {c.yTicks.map((t) => (
+                <g key={`y${t}`} transform={`translate(0,${c.y(t)})`}>
+                  <line x1={0} x2={c.iw} stroke="var(--grid)" />
+                  <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">{t}</text>
+                </g>
+              ))}
+              {/* x ticks */}
+              {c.xTicks.map((t) => (
+                <g key={`x${+t}`} transform={`translate(${c.x(t)},${c.ih})`}>
+                  <line y1={0} y2={6} stroke="var(--faint)" />
+                  <text y={20} textAnchor="middle" fontSize={11} fill="var(--muted)" className="tabnum">
+                    {new Date(+t).getUTCFullYear()}
+                  </text>
+                </g>
+              ))}
+              {/* inversion fill (red, below zero) */}
+              <path className="inversion-fill" d={c.invArea(c.s10Fill) ?? ""} fill="var(--neg)" opacity={0.18} />
+              {/* zero baseline */}
+              <line x1={0} x2={c.iw} y1={c.zeroY} y2={c.zeroY} stroke="var(--panel-border-strong)" strokeDasharray="3 3" />
+              {/* series */}
+              <path className="series-2s10s" d={c.lineGen(c.s2) ?? ""} fill="none" stroke={SERIES[1]} strokeWidth={1.5} opacity={0.85} />
+              <path className="series-10y3m" d={c.lineGen(c.s10) ?? ""} fill="none" stroke="var(--accent)" strokeWidth={2} />
+            </g>
+          </svg>
+        )}
+      </div>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded bg-[var(--accent)]" /> 10y–3m</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded" style={{ background: SERIES[1] }} /> 2s10s</span>

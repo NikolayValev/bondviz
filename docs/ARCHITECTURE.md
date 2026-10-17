@@ -17,7 +17,7 @@ BondViz is **two parallel codebases** in one repo:
 / `README.md` (which describe the Streamlit app) reflect where the work is — they predate the
 Vercel rebuild.
 
-Health baseline (2026-10-14): web `npm test` = **174 pass** (29 files), `npm run build` = **green**,
+Health baseline (2026-10-16): web `npm test` = **242 pass** (39 files), `npm run build` = **green**,
 `npx eslint .` = **clean**; Python `pytest` = **18 pass**.
 
 ---
@@ -60,7 +60,8 @@ web/
 │   ├── layout.tsx            # root shell: fonts (IBM Plex), <Nav>, <main>, footer; root metadata
 │   ├── page.tsx              # Home: hero + live KPI snapshot + grouped tool cards (ISR, 1h revalidate)
 │   ├── about/page.tsx        # Methodology: conventions + every formula (static)
-│   ├── not-found / error / global-error / loading .tsx   # branded 404, error boundaries, skeleton
+│   ├── not-found / error / global-error .tsx   # branded 404 + error boundaries (no root loading.tsx: it made
+│   │                                            #   static pages stream a skeleton first → CLS 0.13)
 │   ├── opengraph-image.tsx   # 1200×630 social card (static, Satori; colors from lib/brand.ts)
 │   ├── robots.ts, sitemap.ts # generated from lib/site.ts + lib/tools.ts
 │   ├── globals.css           # ★ ALL design tokens live here (CSS vars in :root) + Tailwind
@@ -94,10 +95,18 @@ web/
 │   ├── site.ts               # canonical URL, author/source links, pageMetadata()/rootMetadata
 │   ├── brand.ts              # literal token hex for the OG renderer (test guards drift)
 │   ├── rateLimit.ts          # fixed-window per-key limiter (command-panel chat route)
+│   ├── curveShocks.ts        # named curve shocks (log-maturity shapes, 5Y pivot) + benchmark reprices
+│   ├── relativeValue.ts      # z-score / percentile of today's spread vs a trailing window
+│   ├── urlState.ts           # typed query-string codecs (num, oneOf, text, numSet, records)
+│   ├── paletteSearch.ts      # ⌘K palette ranking
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)
-│   ├── ui/                   # Card, Metric, Segmented, Skeleton  (design-system primitives)
+│   ├── CommandPalette.tsx    # ⌘K / Ctrl-K dialog (combobox + listbox), mounted in layout.tsx
+│   ├── useUrlState.ts        # page state ⇄ query string (useSyncExternalStore + debounced replaceState)
+│   ├── KeyRateRisk.tsx       # key-rate duration / DV01 bars (pricing + portfolio)
+│   ├── LazyMount.tsx         # mount heavy below-the-fold charts when they near the viewport
+│   ├── ui/                   # Card, Metric, Segmented, Skeleton, ScrollRegion, CopyLinkButton
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
 │                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test
@@ -114,11 +123,11 @@ web/
 | Route | Client | lib used | Data | Charts |
 | --- | --- | --- | --- | --- |
 | `/` | `page.tsx` (Home) | `finance.computeCurveKpis` | `/api/treasury/latest` (inline) | KPI metrics only |
-| `/yield-curve` | `YieldCurveClient` | `finance`, `curve` | `/api/treasury/range` (~1yr) | LineChart ×4, Heatmap |
-| `/pricing` | `PricingClient` | `finance` | none (pure, client-side) | PriceYield, Cashflow, Scenario |
+| `/yield-curve` | `YieldCurveClient` (+ `ShockScenario`) | `finance`, `curve`, `curveShocks` | `/api/treasury/range` (~1yr) | LineChart ×5, CategoryBar, Heatmap |
+| `/pricing` | `PricingClient` | `finance` (incl. `keyRateDurations`) | none (pure, client-side) | PriceYield, Cashflow, KeyRateRisk, Scenario |
 | `/carry` | `CarryClient` | `carry`, `finance` | `/api/treasury/range` (30d) | CategoryBarChart ×2 |
-| `/signal` | `SignalClient` | `signal`, `spreadsCache` | `/api/treasury/spreads` (1990→now) | SpreadHistoryChart |
-| `/portfolio` | `PortfolioClient` | `portfolio`, `finance` | none (user-entered bonds) | ScenarioChart |
+| `/signal` | `SignalClient` (+ `RelativeValuePanel`) | `signal`, `spreadsCache`, `relativeValue` | `/api/treasury/spreads` (1990→now) | SpreadHistoryChart, range bars |
+| `/portfolio` | `PortfolioClient` | `portfolio`, `finance` | none (book lives in the URL) | KeyRateRisk, ScenarioChart |
 | `/pca` | `PcaClient` | `pca`, `finance` | `/api/treasury/range` (1–5yr) | LineChart ×2 |
 | `/stocks` | `StocksClient` | `polygon` types | `/api/stocks/aggregates` | LineChart |
 | `/command-panel` | `CommandPanelClient` (browser-only mount) | registry in `command-panel/data.ts` → `treasury`, `finance`, `curve`, `carry`, `signal` | `/api/command-panel` (chat, needs `GITHUB_MODELS_TOKEN`) + `/api/command-panel/data` | LLM-proposed widgets (`@nikolayvalev/command-panel`; see `docs/DECISIONS-command-panel.md`) |
@@ -155,7 +164,11 @@ Every page in this app was built the same way. Follow it and you'll match the co
 6. **Register the tool.** Add one entry to `TOOLS` in `lib/tools.ts` (href, nav label, title,
    description, group). Nav, the Home cards, the sitemap and `toolMetadata` all read it, and
    `tools.test.ts` checks the route exists.
-7. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
+7. **Make it shareable.** If the page has inputs, keep them in the URL: declare a module-level
+   `URL_DEFAULTS` + `URL_SCHEMA` (codecs from `lib/urlState.ts`) and use
+   `const [state, set, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS)`. Only non-default
+   values are written; invalid params fall back to defaults. Add `<CopyLinkButton getUrl={shareUrl} />`.
+8. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
 
 There are full worked examples of this exact flow in `docs/superpowers/specs/*` (design) and
 `docs/superpowers/plans/*` (step-by-step). The two most recent (`carry-rolldown`,
@@ -178,7 +191,16 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
   not add raw hex; chart series colors are the current offender.
 - **Numbers are tabular.** Add `className="tabnum"` to any numeric display (monospace + `tnum`).
 - **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`; spreads/changes use
-  sign + text, not color alone; inputs have labels.
+  sign + text, not color alone; inputs have labels; inline links are underlined; wide tables go
+  in a `ScrollRegion`. Baseline 2026-10-16: zero axe-core (WCAG 2.1 AA) violations on every route
+  at 1280 and 390px. Keep it that way.
+- **CSS layers.** Never add an unlayered rule to `globals.css` that a utility might need to
+  override: unlayered CSS beats every Tailwind utility regardless of specificity. Use
+  `@layer base` / `@layer components` (see DESIGN-SYSTEM.md).
+- **No layout shift.** Charts reserve their height before measuring width; loading skeletons are
+  sized like the loaded page; the page `<h1>` renders in every state (it's usually the LCP
+  element). Heavy below-the-fold charts go in `LazyMount`. There is deliberately no root
+  `loading.tsx` (it made static pages stream a skeleton first).
 - **Secrets** only in `app/api/*` server routes (read `process.env.POLYGON_API_KEY`). Never ship
   a key to the browser. `.env*` is gitignored at both repo root and `web/`.
 
@@ -196,7 +218,7 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 ## Testing & tooling
 
-- **Vitest** (`npm test`), jsdom env, Testing Library for components. 29 test files, 174 tests.
+- **Vitest** (`npm test`), jsdom env, Testing Library for components. 39 test files, 242 tests.
   Every `lib/*.ts` has a sibling `*.test.ts`; charts have render/smoke tests; API routes stub
   `fetch` with `vi.stubGlobal`.
 - **ESLint** via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`). Run with

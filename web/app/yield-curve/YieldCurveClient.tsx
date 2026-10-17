@@ -9,6 +9,11 @@ import { SERIES } from "@/lib/chartColors";
 import { Heatmap } from "@/components/charts/Heatmap";
 import { YieldRow } from "@/lib/types";
 import { iso } from "@/lib/format";
+import { SHOCK_SIZES, SHOCKS, type ShockKind } from "@/lib/curveShocks";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
+import { ShockScenario } from "./ShockScenario";
+import { LazyMount } from "@/components/LazyMount";
 
 const COMPARE = [
   { label: "1M ago", months: 1, color: SERIES[1] },
@@ -16,6 +21,13 @@ const COMPARE = [
   { label: "6M ago", months: 6, color: SERIES[3] },
   { label: "1Y ago", months: 12, color: SERIES[4] },
 ];
+
+// The shock scenario's shape and size live in the URL: /yield-curve?shock=twist&bp=100
+const URL_DEFAULTS = { shock: "bear-steepener" as ShockKind, bp: 50 };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = {
+  shock: oneOf(SHOCKS.map((s) => s.kind)),
+  bp: oneOf(SHOCK_SIZES),
+};
 
 function nearest(rows: YieldRow[], target: string): YieldRow | null {
   if (rows.length === 0) return null;
@@ -32,6 +44,7 @@ function nearest(rows: YieldRow[], target: string): YieldRow | null {
 export function YieldCurveClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
   const [error, setError] = useState(false);
+  const [url, setUrl, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
 
   useEffect(() => {
     const end = new Date();
@@ -87,18 +100,30 @@ export function YieldCurveClient() {
     return { latest, latestCurve, curveSeries, spreadSeriesData, bootstrapSeries, heatmap };
   }, [rows]);
 
-  if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
+  // The heading renders in every state so it's in the prerendered HTML (it's the LCP element)
+  // and the page keeps a heading while loading or on error.
+  const header = <h1 className="text-2xl">Yield Curve Explorer</h1>;
+  if (error)
+    return (
+      <div className="space-y-6">
+        {header}
+        <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>
+      </div>
+    );
   if (!view)
     return (
-      <div role="status" aria-label="Loading Treasury data" className="space-y-6">
-        <Skeleton className="h-96" />
-        <Skeleton className="h-80" />
+      <div className="space-y-6">
+        {header}
+        <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-80" />
+        </div>
       </div>
     );
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl">Yield Curve Explorer</h1>
+      {header}
 
       <Card>
         <h2 className="mb-2 text-lg">Latest curve · {view.latest.date}</h2>
@@ -123,15 +148,26 @@ export function YieldCurveClient() {
         />
       </Card>
 
+      <ShockScenario
+        curve={view.latestCurve}
+        date={view.latest.date}
+        kind={url.shock}
+        sizeBps={url.bp}
+        onChange={({ kind, sizeBps }) => setUrl({ shock: kind, bp: sizeBps })}
+        shareUrl={shareUrl}
+      />
+
       <Card>
         <h2 className="mb-2 text-lg">Zero & forward curve (bootstrapped)</h2>
-        <LineChart
-          ariaLabel="Bootstrapped zero and forward curves vs par"
-          series={view.bootstrapSeries}
-          xLabel="Maturity (years)"
-          yLabel="Rate (%)"
-          yUnit="%"
-        />
+        <LazyMount minHeight={320}>
+          <LineChart
+            ariaLabel="Bootstrapped zero and forward curves vs par"
+            series={view.bootstrapSeries}
+            xLabel="Maturity (years)"
+            yLabel="Rate (%)"
+            yUnit="%"
+          />
+        </LazyMount>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Par yields are treated as semiannual par coupons and bootstrapped into discount factors;
           zero rates are annual-compounded, and forwards are the implied 6-month rates.
@@ -140,15 +176,17 @@ export function YieldCurveClient() {
 
       <Card>
         <h2 className="mb-2 text-lg">Key spreads over time</h2>
-        <LineChart
-          ariaLabel="2s10s and 3m10y spreads over time"
-          series={view.spreadSeriesData}
-          xType="time"
-          xLabel="Date"
-          yLabel="Spread (bps)"
-          yUnit=""
-          zeroBaseline
-        />
+        <LazyMount minHeight={320}>
+          <LineChart
+            ariaLabel="2s10s and 3m10y spreads over time"
+            series={view.spreadSeriesData}
+            xType="time"
+            xLabel="Date"
+            yLabel="Spread (bps)"
+            yUnit=""
+            zeroBaseline
+          />
+        </LazyMount>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Negative spreads indicate inversion. Lines below the dashed zero line mark inverted regimes.
         </p>
@@ -156,13 +194,15 @@ export function YieldCurveClient() {
 
       <Card>
         <h2 className="mb-2 text-lg">Yield heatmap (time × tenor)</h2>
-        <Heatmap
-          ariaLabel="Treasury yields by tenor over time"
-          dates={view.heatmap.dates}
-          tenors={view.heatmap.tenors}
-          values={view.heatmap.values}
-          unit="%"
-        />
+        <LazyMount minHeight={300}>
+          <Heatmap
+            ariaLabel="Treasury yields by tenor over time"
+            dates={view.heatmap.dates}
+            tenors={view.heatmap.tenors}
+            values={view.heatmap.values}
+            unit="%"
+          />
+        </LazyMount>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Each row is a date (oldest at the top), each column a tenor; brighter cells are higher
           yields (see the scale below the chart).

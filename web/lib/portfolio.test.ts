@@ -6,7 +6,7 @@ import {
   modifiedDuration,
   pvContinuous,
 } from "@/lib/finance";
-import { portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
+import { portfolioKeyRates, portfolioMetrics, portfolioScenario } from "@/lib/portfolio";
 
 const A = { face: 100_000, coupon: 0.05, yield_: 0.04, years: 10, freq: 2 };
 const B = { face: 50_000, coupon: 0.03, yield_: 0.045, years: 2, freq: 2 };
@@ -73,5 +73,29 @@ describe("portfolioScenario", () => {
     const rows = portfolioScenario([A, B], [25]);
     const r = rows.find((x) => x.shiftBps === 25)!;
     expect(Math.abs(r.approxPctChange - r.pctChange)).toBeLessThan(5e-4);
+  });
+});
+
+describe("portfolioKeyRates", () => {
+  const book = [
+    { face: 1000, coupon: 0.04, yield_: 0.042, years: 2 },
+    { face: 2000, coupon: 0.05, yield_: 0.047, years: 10 },
+    { face: 500, coupon: 0.045, yield_: 0.05, years: 30, freq: 1 },
+  ];
+
+  it("adds holdings' dollar DV01s and sums to the portfolio's weighted duration and DV01", () => {
+    const krs = portfolioKeyRates(book);
+    const m = portfolioMetrics(book);
+    expect(krs.reduce((a, k) => a + k.dv01, 0)).toBeCloseTo(m.dv01, 8);
+    expect(krs.reduce((a, k) => a + k.krd, 0)).toBeCloseTo(m.weightedDuration, 8);
+  });
+
+  it("puts a single 2Y bond's risk only at or below the 3Y key", () => {
+    const krs = portfolioKeyRates([book[0]]);
+    for (const k of krs.filter((k) => k.years > 3)) expect(k.krd).toBe(0);
+  });
+
+  it("is all zeros for an empty book", () => {
+    expect(portfolioKeyRates([]).every((k) => k.krd === 0 && k.dv01 === 0)).toBe(true);
   });
 });

@@ -25,7 +25,7 @@ export default function NotFound() {
         <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           {TOOLS.map((t) => (
             <li key={t.href}>
-              <Link href={t.href} className="text-[var(--accent)] hover:underline">
+              <Link href={t.href} className="text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
                 {t.title}
               </Link>
             </li>

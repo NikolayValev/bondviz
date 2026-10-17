@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { scaleBand, scaleLinear } from "d3-scale";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 
@@ -15,13 +15,15 @@ export interface CategoryBarChartProps {
   series: BarSeries[];
   ariaLabel: string;
   yUnit?: string;
+  /** Tick label formatter; defaults to whole numbers plus yUnit. */
+  formatY?: (v: number) => string;
   width?: number;
   height?: number;
 }
 
 const M = { top: 12, right: 16, bottom: 32, left: 52 };
 
-export function CategoryBarChart(props: CategoryBarChartProps) {
+export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBarChartProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
   const height = props.height ?? 280;
@@ -87,41 +89,45 @@ export function CategoryBarChart(props: CategoryBarChartProps) {
     return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw };
   }, [props.categories, props.series, width, height]);
 
-  const fmtY = (v: number) => `${Math.round(v)}${props.yUnit ?? ""}`;
+  const fmtY = props.formatY ?? ((v: number) => `${Math.round(v)}${props.yUnit ?? ""}`);
 
   return (
-    <div ref={ref} className="w-full" style={{ minHeight: height }}>
-      {c && (
-        <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
-          <g transform={`translate(${M.left},${M.top})`}>
-            {c.yTicks.map((t) => (
-              <g key={`y${t}`} transform={`translate(0,${c.y(t)})`}>
-                <line x1={0} x2={c.iw} stroke="var(--grid)" />
-                <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
-                  {fmtY(t)}
+    <div className="w-full">
+      {/* The plot box reserves its height before the width is measured, so the legend below
+          doesn't jump down when the SVG appears (layout shift). */}
+      <div ref={ref} style={{ minHeight: height }}>
+        {c && (
+          <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
+            <g transform={`translate(${M.left},${M.top})`}>
+              {c.yTicks.map((t) => (
+                <g key={`y${t}`} transform={`translate(0,${c.y(t)})`}>
+                  <line x1={0} x2={c.iw} stroke="var(--grid)" />
+                  <text x={-8} dy="0.32em" textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
+                    {fmtY(t)}
+                  </text>
+                </g>
+              ))}
+              <line x1={0} x2={c.iw} y1={c.y(0)} y2={c.y(0)} stroke="var(--panel-border-strong)" />
+              {c.rects.map((r) => (
+                <rect key={r.key} className="bar" x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} rx={1.5} />
+              ))}
+              {props.categories.map((cat) => (
+                <text
+                  key={`x${cat}`}
+                  x={(c.x(cat) ?? 0) + c.bw / 2}
+                  y={c.ih + 18}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill="var(--muted)"
+                  className="tabnum"
+                >
+                  {cat}
                 </text>
-              </g>
-            ))}
-            <line x1={0} x2={c.iw} y1={c.y(0)} y2={c.y(0)} stroke="var(--panel-border-strong)" />
-            {c.rects.map((r) => (
-              <rect key={r.key} className="bar" x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} rx={1.5} />
-            ))}
-            {props.categories.map((cat) => (
-              <text
-                key={`x${cat}`}
-                x={(c.x(cat) ?? 0) + c.bw / 2}
-                y={c.ih + 18}
-                textAnchor="middle"
-                fontSize={11}
-                fill="var(--muted)"
-                className="tabnum"
-              >
-                {cat}
-              </text>
-            ))}
-          </g>
-        </svg>
-      )}
+              ))}
+            </g>
+          </svg>
+        )}
+      </div>
       {props.series.length > 1 && (
         <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
           {props.series.map((s) => (
@@ -134,4 +140,4 @@ export function CategoryBarChart(props: CategoryBarChartProps) {
       )}
     </div>
   );
-}
+});

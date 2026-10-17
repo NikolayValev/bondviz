@@ -9,6 +9,9 @@ import { rowToCurve } from "@/lib/finance";
 import { SERIES } from "@/lib/chartColors";
 import { iso } from "@/lib/format";
 import { YieldRow } from "@/lib/types";
+import { useUrlState } from "@/components/useUrlState";
+import { oneOf, type Schema } from "@/lib/urlState";
+import { ScrollRegion } from "@/components/ui/ScrollRegion";
 
 const HORIZONS = [
   { label: "1M", value: 1 / 12 },
@@ -16,6 +19,9 @@ const HORIZONS = [
   { label: "6M", value: 0.5 },
   { label: "1Y", value: 1 },
 ];
+
+const URL_DEFAULTS = { horizon: "3M" };
+const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { horizon: oneOf(HORIZONS.map((h) => h.label)) };
 
 function summarize(points: CarryPoint[], horizonLabel: string): string {
   if (points.length === 0) return "No tenors longer than the horizon in this snapshot.";
@@ -27,7 +33,9 @@ function summarize(points: CarryPoint[], horizonLabel: string): string {
 export function CarryClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
   const [error, setError] = useState(false);
-  const [horizon, setHorizon] = useState(0.25);
+  const [url, setUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS);
+  const horizon = HORIZONS.find((h) => h.label === url.horizon)?.value ?? 0.25;
+  const setHorizon = (v: number) => setUrl({ horizon: HORIZONS.find((h) => h.value === v)?.label ?? "3M" });
 
   useEffect(() => {
     const end = new Date();
@@ -49,12 +57,30 @@ export function CarryClient() {
     return { date: latest.date, points };
   }, [rows, horizon]);
 
-  if (error) return <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>;
+  // Heading + horizon picker render in every state (prerendered; LCP; heading on error).
+  const header = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h1 className="text-2xl">Carry &amp; Roll-Down</h1>
+      <Segmented ariaLabel="Holding horizon" options={HORIZONS} value={horizon} onChange={(v) => setHorizon(v as number)} />
+    </div>
+  );
+  if (error)
+    return (
+      <div className="space-y-6">
+        {header}
+        <p className="text-[var(--muted)]">Treasury data is unavailable right now.</p>
+      </div>
+    );
   if (!view)
     return (
-      <div role="status" aria-label="Loading Treasury data" className="space-y-6">
-        <Skeleton className="h-96" />
-        <Skeleton className="h-80" />
+      <div className="space-y-6">
+        {header}
+        {/* Sized like the loaded page (two charts + table) so the footer doesn't jump (CLS). */}
+        <div role="status" aria-label="Loading Treasury data" className="space-y-6">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
       </div>
     );
 
@@ -62,15 +88,7 @@ export function CarryClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl">Carry &amp; Roll-Down</h1>
-        <Segmented
-          ariaLabel="Holding horizon"
-          options={HORIZONS}
-          value={horizon}
-          onChange={(v) => setHorizon(v as number)}
-        />
-      </div>
+      {header}
 
       <Card>
         <div className="mb-2 flex items-baseline justify-between">
@@ -104,7 +122,7 @@ export function CarryClient() {
 
       <Card>
         <h2 className="mb-3 text-lg">Detail</h2>
-        <div className="overflow-x-auto">
+        <ScrollRegion label="Carry and roll-down by tenor">
           <table className="w-full text-sm tabnum">
             <thead>
               <tr className="text-left text-[var(--muted)]">
@@ -133,7 +151,7 @@ export function CarryClient() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
         <p className="mt-3 text-xs text-[var(--faint)]">
           Static-curve, unlevered. Carry = running yield × horizon; roll-down ≈ duration × (yield − rolled yield)
           on today&apos;s curve. Tenors with maturity ≤ horizon are omitted.

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { NAV_LINKS as LINKS } from "@/lib/tools";
+import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 
 
 export function Nav() {
@@ -45,30 +46,46 @@ export function Nav() {
           })}
         </div>
 
-        {/* Mobile: hamburger toggle */}
-        <button
-          type="button"
-          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--panel-border)] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] lg:hidden"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            {open ? (
-              <>
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </>
-            ) : (
-              <>
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </>
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Opens the ⌘K command palette (components/CommandPalette.tsx). */}
+          <button
+            type="button"
+            aria-label="Search pages (⌘K)"
+            title="Search pages (⌘K)"
+            onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--panel-border)] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </button>
+
+          {/* Mobile: hamburger toggle */}
+          <button
+            type="button"
+            aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--panel-border)] text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)] lg:hidden"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              {open ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile dropdown panel */}
