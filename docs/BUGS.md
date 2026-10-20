@@ -148,6 +148,19 @@
   fills are very slightly clipped at sign changes. Acceptable for a dashboard; noted for honesty.
 - **Fix (optional):** split segments at interpolated zero crossings before building the area.
 
+### BUG-15 · Forward curve spikes at the 20Y tenor — ✅ FIXED (2026-10-20: monotone cubic par interpolation)
+
+- **Where:** `web/lib/curve.ts` (`bootstrapZeros`), shown on `/yield-curve`.
+- **Problem:** par yields were interpolated linearly between tenors. The slope of a linear fill
+  jumps at every tenor, and since fwd ≈ zero + T·dzero/dT the 6-month forward turns each slope jump
+  into a level jump, magnified by maturity: on a humped curve the forward leapt ~170 bp in one
+  half-year step at 20Y. It read as a data glitch on the chart.
+- **Fix:** `makePchip()` in `lib/interp.ts` (Fritsch–Carlson monotone cubic: continuous slope, no
+  overshoot, exact at every quote) and `bootstrapZeros(par, { interpolation: "pchip" })`. The library
+  default stays linear to match the Python reference; `/yield-curve` defaults to the cubic with a
+  "Linear" toggle (`?interp=linear`). Tests pin both: par bonds price to par at every quoted tenor,
+  and the long-end forward step drops from >100 bp to <30 bp.
+
 ---
 
 ## Security / dependencies

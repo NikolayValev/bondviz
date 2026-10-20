@@ -182,9 +182,9 @@ export default function AboutPage() {
 
       <Section id="bootstrap" title="Curve bootstrap" tool="/yield-curve">
         <p>
-          Par yields are interpolated linearly (flat beyond the ends) onto a half-year grid. Each node
-          is a par bond with semiannual coupon c = r/2 priced at 1, which pins down its discount
-          factor given all earlier ones:
+          Par yields are filled in onto a half-year grid (flat beyond the ends). Each node is a par
+          bond with semiannual coupon c = r/2 priced at 1, which pins down its discount factor given
+          all earlier ones:
         </p>
         <Formula>
           DF<sub>n</sub> = (1 − c · Σ<sub>k&lt;n</sub> DF<sub>k</sub>) / (1 + c)
@@ -192,6 +192,14 @@ export default function AboutPage() {
         <Formula>
           zero(T) = DF(T)<sup>−1/T</sup> − 1 &nbsp;&nbsp;·&nbsp;&nbsp; fwd<sub>6m</sub> = (DF<sub>n−1</sub> / DF<sub>n</sub>)<sup>2</sup> − 1
         </Formula>
+        <p>
+          How the gaps between quoted tenors are filled matters for the forward curve. Since
+          fwd ≈ zero + T · dzero/dT, any kink in the par curve becomes a jump in the forwards, scaled
+          up by maturity. Linear interpolation, which the Python reference uses, kinks at every tenor
+          and puts a visible spike in the forwards at 20Y. The explorer therefore defaults to a
+          monotone cubic (Fritsch–Carlson PCHIP): it passes through every quoted yield, keeps a
+          continuous slope, and never overshoots the data. Linear stays one click away for comparison.
+        </p>
         <p>
           The explorer also shows the latest curve against 1, 3, 6 and 12 months ago, the 2s10s and
           3m10y spreads over time, and a date × tenor heatmap of the whole window.
@@ -333,7 +341,7 @@ export default function AboutPage() {
           <li>A single flat yield per bond: pricing does not discount each cashflow off the zero curve.</li>
           <li>Carry and roll-down assume the curve doesn&apos;t move over the horizon.</li>
           <li>Holding-period returns hold coupons as cash rather than reinvesting them.</li>
-          <li>The bootstrap interpolates par yields linearly; no spline or Nelson–Siegel fit.</li>
+          <li>The bootstrap interpolates par yields between tenors rather than fitting a Nelson–Siegel or smoothing-spline model, so it reproduces every quote exactly, noise included.</li>
           <li>No day-count conventions, settlement lags or accrued interest; times are in exact years.</li>
           <li>The inversion signal is descriptive history, not a forecast.</li>
           <li>Curve shocks are stylized shapes, not estimated from historical moves.</li>

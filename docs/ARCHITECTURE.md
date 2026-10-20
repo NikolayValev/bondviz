@@ -81,7 +81,7 @@ web/
 │   ├── types.ts              # TENOR_LABELS, YieldRow, CurvePoint, Kpis, StockBar
 │   ├── finance.ts            # bond math: PV, duration, convexity, DV01, scenarios, KPIs, tenor maps
 │   ├── curve.ts              # par→zero/forward bootstrap (semiannual)
-│   ├── interp.ts             # linear interp w/ flat extrapolation (shared)
+│   ├── interp.ts             # linear + monotone cubic (PCHIP) interp, flat extrapolation
 │   ├── carry.ts              # carry & roll-down per tenor
 │   ├── signal.ts             # inversion episodes vs NBER recessions
 │   ├── pca.ts                # standardize → covariance → Jacobi eigensolver → PCA
@@ -180,7 +180,9 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 - **Continuous compounding** is the bond-math convention everywhere in `finance.ts`
   (`e^{-y·t}`). The curve bootstrap in `curve.ts` is the *one* exception: par yields are
-  **semiannual** par coupons producing **annual-compounded** zero rates. Never conflate them.
+  **semiannual** par coupons producing **annual-compounded** zero rates. Never conflate them. Its par interpolation defaults to
+  linear (Python parity); `/yield-curve` passes `interpolation: "pchip"` so forwards don't spike
+  at tenor kinks.
 - **Pure & tested.** Anything in `lib/` must be a pure function with a `.test.ts`. UI logic that
   can be pulled into a pure helper, should be.
 - **Fail soft.** Data routes and data-driven pages degrade to "—" / "unavailable" placeholders
