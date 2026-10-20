@@ -29,6 +29,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      # Fail on high/critical advisories in what ships; dev-only tooling is tracked in docs/BUGS.md.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npx eslint .
       - run: npx tsc --noEmit

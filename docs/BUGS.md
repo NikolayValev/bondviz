@@ -147,3 +147,24 @@
 - **Problem:** the red "inverted" area clips each point to zero rather than the exact crossing, so
   fills are very slightly clipped at sign changes. Acceptable for a dashboard; noted for honesty.
 - **Fix (optional):** split segments at interpolated zero crossings before building the area.
+
+---
+
+## Security / dependencies
+
+### BUG-14 · Next.js 16.2.7 and transitive dependencies had known advisories — ✅ FIXED (2026-10-20)
+
+- **Where:** `web/package.json`, `web/package-lock.json`.
+- **Problem:** `npm audit` reported 17 (1 critical, 13 high). `next@16.2.7` alone carried 17
+  advisories, including RCE in `next/og` `ImageResponse` (this app renders its OG card with it),
+  RCE/SSRF in the image optimizer and SSG/ISR cache poisoning; plus `postcss`, `sharp`, `undici`,
+  `brace-expansion`, `js-yaml`, `browserslist`, `nanoid`, `source-map-js`, `vitest`.
+- **Fix:** `next` / `eslint-config-next` → 16.4.2 (minor), in-range lockfile updates for the rest.
+  Production dependencies: **0 vulnerabilities**. CI now fails on any high/critical production
+  advisory (`npm audit --omit=dev --audit-level=high`).
+- **Accepted residual (dev-only):** `eslint-config-next → @next/eslint-plugin-next → fast-glob →
+  micromatch → braces` (ReDoS in glob parsing). No patched `braces` exists and npm's only
+  "fix" is a downgrade to `eslint-config-next@14`; it only parses this repo's own lint globs.
+- **Gotcha:** npm 10's `npm audit fix` / `npm update` crash here (`Cannot read properties of null
+  (reading 'edgesOut')`, an arborist peer-set bug). `npx npm@11 audit fix` works and writes the
+  same lockfile v3 that npm 10's `npm ci` installs cleanly.
