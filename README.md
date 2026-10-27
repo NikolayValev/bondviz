@@ -35,8 +35,8 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 be shared directly, for example a
 [30-year 3% bond](https://bondviz.nikolayvalev.com/pricing?coupon=3&years=30&yield=4.5) or a
 [100bp bear steepener](https://bondviz.nikolayvalev.com/yield-curve?shock=bear-steepener&bp=100).
-Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools, and every chart and table
-downloads as **PNG or CSV**.
+Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools. Charts and data tables
+download as **PNG or CSV**.
 
 Every formula, and every convention behind it, is written up on the
 **[methodology page](https://bondviz.nikolayvalev.com/about)**. For example, pricing uses

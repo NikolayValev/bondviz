@@ -10,6 +10,7 @@ read one or two of them plus the file it's editing and have full context.
 | [BACKLOG.md](BACKLOG.md) | …are picking up a feature/improvement. Agent-ready briefs (`FEAT-*`) with files, approach, effort, acceptance. |
 | [BUGS.md](BUGS.md) | …are fixing something. Tiered bugs & tech debt (`BUG-*`) with location + fix sketch. |
 | [PORTFOLIO-PLAN.md](PORTFOLIO-PLAN.md) | …deciding what to do next. Phased plan to make the app portfolio-ready; sequences BACKLOG/BUGS items and adds FEAT-15+. |
+| [PORTFOLIO-ENTRY.md](PORTFOLIO-ENTRY.md) | …writing about the project. Ready-to-paste summary, highlights, stack tags, links and screenshot picks. |
 
 **Most important orientation fact:** the active product is the **Next.js app in `web/`**. The
 Python/Streamlit code (`src/bondviz/`, `app/`, root `README.md`/`CLAUDE.md`) is a frozen reference
