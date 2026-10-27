@@ -202,6 +202,7 @@ export function StocksClient() {
                 <div className="mt-4">
                   <LineChart
                     ariaLabel={`${activeTicker} daily close price`}
+                    exportTitle={`${activeTicker} daily close`}
                     series={view.series}
                     xType="time"
                     xLabel="Date"

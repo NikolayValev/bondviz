@@ -4,6 +4,8 @@ import { scaleLinear, scaleUtc } from "d3-scale";
 import { line } from "d3-shape";
 import { extent } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { axisUnit, seriesTable } from "@/lib/exportCsv";
 
 export interface Series {
   id: string;
@@ -22,6 +24,8 @@ export interface LineChartProps {
   xType?: "linear" | "time";
   yUnit?: string;
   zeroBaseline?: boolean;
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
 }
 
 const M = { top: 12, right: 16, bottom: 36, left: 48 };
@@ -125,14 +129,30 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
           </svg>
         )}
       </div>
-      {props.series.length > 1 && (
-        <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
-          {props.series.map((s) => (
-            <span key={s.id} className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
-              {s.label}
-            </span>
-          ))}
+      {(props.series.length > 1 || props.exportTitle) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+          {props.series.length > 1 &&
+            props.series.map((s) => (
+              <span key={s.id} className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
+                {s.label}
+              </span>
+            ))}
+          {props.exportTitle && (
+            <ExportButtons
+              className="ml-auto"
+              title={props.exportTitle}
+              csv={() =>
+                seriesTable(props.series, {
+                  xLabel: props.xLabel ?? (props.xType === "time" ? "Date" : "x"),
+                  xType: props.xType,
+                  unit: axisUnit(props.yLabel),
+                })
+              }
+              svg={() => ref.current?.querySelector("svg")}
+              legend={props.series.length > 1 ? props.series : []}
+            />
+          )}
         </div>
       )}
     </div>

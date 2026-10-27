@@ -99,6 +99,7 @@ web/
 │   ├── relativeValue.ts      # z-score / percentile of today's spread vs a trailing window
 │   ├── urlState.ts           # typed query-string codecs (num, oneOf, text, numSet, records)
 │   ├── paletteSearch.ts      # ⌘K palette ranking
+│   ├── exportCsv.ts          # CSV text (RFC 4180, formula-safe), series/category tables, file names
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)
@@ -106,9 +107,11 @@ web/
 │   ├── useUrlState.ts        # page state ⇄ query string (useSyncExternalStore + debounced replaceState)
 │   ├── KeyRateRisk.tsx       # key-rate duration / DV01 bars (pricing + portfolio)
 │   ├── LazyMount.tsx         # mount heavy below-the-fold charts when they near the viewport
-│   ├── ui/                   # Card, Metric, Segmented, Skeleton, ScrollRegion, CopyLinkButton
+│   ├── ui/                   # Card, Metric, Segmented, Skeleton, ScrollRegion, CopyLinkButton,
+│   │                         # ExportButtons (CSV / PNG downloads)
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
-│                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
+│                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver,
+│                             # exportPng (SVG → standalone copy → canvas → PNG)
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test
 ├── globals/config            # next.config.ts (serverExternalPackages: command-panel), vercel.json,
 │                             # tsconfig.json, eslint.config.mjs,
@@ -168,7 +171,10 @@ Every page in this app was built the same way. Follow it and you'll match the co
    `URL_DEFAULTS` + `URL_SCHEMA` (codecs from `lib/urlState.ts`) and use
    `const [state, set, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS)`. Only non-default
    values are written; invalid params fall back to defaults. Add `<CopyLinkButton getUrl={shareUrl} />`.
-8. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
+8. **Make it exportable.** Give each shared chart an `exportTitle` (it adds CSV / PNG buttons to
+   the legend row) and put `<ExportButtons title csv={() => ({ columns, rows })} />` by each data
+   table. Pass raw numbers (percent as percent, not decimals) and put units in the headers.
+9. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
 
 There are full worked examples of this exact flow in `docs/superpowers/specs/*` (design) and
 `docs/superpowers/plans/*` (step-by-step). The two most recent (`carry-rolldown`,

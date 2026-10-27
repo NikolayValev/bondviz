@@ -2,6 +2,8 @@
 import { memo, useMemo } from "react";
 import { scaleBand, scaleLinear } from "d3-scale";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { categoryTable } from "@/lib/exportCsv";
 
 export interface BarSeries {
   id: string;
@@ -19,6 +21,10 @@ export interface CategoryBarChartProps {
   formatY?: (v: number) => string;
   width?: number;
   height?: number;
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
+  /** Header of the category column in the CSV. */
+  categoryLabel?: string;
 }
 
 const M = { top: 12, right: 16, bottom: 32, left: 52 };
@@ -128,14 +134,31 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
           </svg>
         )}
       </div>
-      {props.series.length > 1 && (
-        <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
-          {props.series.map((s) => (
-            <span key={s.id} className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
-              {s.label}
-            </span>
-          ))}
+      {(props.series.length > 1 || props.exportTitle) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+          {props.series.length > 1 &&
+            props.series.map((s) => (
+              <span key={s.id} className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
+                {s.label}
+              </span>
+            ))}
+          {props.exportTitle && (
+            <ExportButtons
+              className="ml-auto"
+              title={props.exportTitle}
+              csv={() => {
+                const unit = props.yUnit?.trim();
+                return categoryTable(
+                  props.categoryLabel ?? "Category",
+                  props.categories,
+                  props.series.map((s) => ({ label: unit ? `${s.label} (${unit})` : s.label, values: s.values })),
+                );
+              }}
+              svg={() => ref.current?.querySelector("svg")}
+              legend={props.series.length > 1 ? props.series : []}
+            />
+          )}
         </div>
       )}
     </div>

@@ -27,6 +27,7 @@ import { KeyRateRisk } from "@/components/KeyRateRisk";
 import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { useUrlState } from "@/components/useUrlState";
 import { num, numSet, oneOf, type Schema } from "@/lib/urlState";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 
 const signedMoney = (v: number) => `${v >= 0 ? "+" : "−"}${money(Math.abs(v))}`;
 
@@ -242,7 +243,16 @@ export function PricingClient() {
             <h2 className="text-lg">Scenario analysis</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">Parallel yield shifts — full reprice vs. approximation.</p>
           </div>
-          <Segmented ariaLabel="Shift magnitudes in basis points" multi options={MAGNITUDES.map((mm) => ({ label: `±${mm}`, value: mm }))} value={mags} onChange={(v) => setMags(v as number[])} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Segmented ariaLabel="Shift magnitudes in basis points" multi options={MAGNITUDES.map((mm) => ({ label: `±${mm}`, value: mm }))} value={mags} onChange={(v) => setMags(v as number[])} />
+            <ExportButtons
+              title="Bond scenario analysis"
+              csv={() => ({
+                columns: ["Shift (bps)", "New yield (%)", "New price", "$ change", "% change", "D + C estimate (%)"],
+                rows: m.rows.map((r) => [r.shiftBps, r.newYield * 100, r.newPrice, r.dollarChange, r.pctChange * 100, r.approxPctChange * 100]),
+              })}
+            />
+          </div>
         </div>
         <div className="mt-6"><ScenarioChart rows={m.rows} basePrice={m.pv} /></div>
 

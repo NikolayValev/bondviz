@@ -145,6 +145,7 @@ export function YieldCurveClient() {
         <h2 className="mb-2 text-lg">Latest curve · {view.latest.date}</h2>
         <LineChart
           ariaLabel="Latest Treasury yield curve by maturity"
+          exportTitle={`Treasury yield curve ${view.latest.date}`}
           series={[view.curveSeries[0]]}
           xLabel="Maturity (years)"
           yLabel="Yield (%)"
@@ -157,6 +158,7 @@ export function YieldCurveClient() {
         <h2 className="mb-2 text-lg">Curve shifts vs the past</h2>
         <LineChart
           ariaLabel="Latest yield curve compared with prior periods"
+          exportTitle="Curve shifts vs the past"
           series={view.curveSeries}
           xLabel="Maturity (years)"
           yLabel="Yield (%)"
@@ -187,6 +189,7 @@ export function YieldCurveClient() {
           <LineChart
             ariaLabel={`Bootstrapped zero and forward curves vs par, ${url.interp === "pchip" ? "monotone cubic" : "linear"} par interpolation`}
             series={bootstrapSeries}
+            exportTitle={`Zero and forward curve (${url.interp === "pchip" ? "monotone cubic" : "linear"})`}
             xLabel="Maturity (years)"
             yLabel="Rate (%)"
             yUnit="%"
@@ -206,6 +209,7 @@ export function YieldCurveClient() {
         <LazyMount minHeight={320}>
           <LineChart
             ariaLabel="2s10s and 3m10y spreads over time"
+            exportTitle="Key spreads over time"
             series={view.spreadSeriesData}
             xType="time"
             xLabel="Date"
@@ -224,6 +228,7 @@ export function YieldCurveClient() {
         <LazyMount minHeight={300}>
           <Heatmap
             ariaLabel="Treasury yields by tenor over time"
+            exportTitle="Yield heatmap"
             dates={view.heatmap.dates}
             tenors={view.heatmap.tenors}
             values={view.heatmap.values}

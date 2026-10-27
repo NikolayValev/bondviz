@@ -9,6 +9,7 @@ import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
 import { RelativeValuePanel, RV_WINDOWS, type RvWindow } from "./RelativeValuePanel";
 import { ScrollRegion } from "@/components/ui/ScrollRegion";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 
 const URL_DEFAULTS = { window: "10Y" as RvWindow };
 const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { window: oneOf(RV_WINDOWS.map((w) => w.label)) };
@@ -98,6 +99,7 @@ export function SignalClient() {
         <h2 className="mb-2 text-lg">Spread history since 1990</h2>
         <SpreadHistoryChart
           ariaLabel="10y minus 3m and 2s10s spreads since 1990 with inversion and recession shading"
+          exportTitle="Spread history since 1990"
           points={points!}
           recessions={NBER_RECESSIONS}
         />
@@ -105,7 +107,16 @@ export function SignalClient() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-lg">Inversion episodes (10y–3m)</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg">Inversion episodes (10y–3m)</h2>
+          <ExportButtons
+            title="Inversion episodes 10y-3m"
+            csv={() => ({
+              columns: ["Start", "End", "Days", "Max depth (bps)", "Recession within 24 months"],
+              rows: view.episodes.map((e) => [e.start, e.end, e.days, e.maxDepthBps, e.recessionFollowed ? "yes" : "no"]),
+            })}
+          />
+        </div>
         <ScrollRegion label="Inversion episodes table">
           <table className="w-full text-sm tabnum">
             <thead>

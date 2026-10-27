@@ -51,8 +51,10 @@ export function KeyRateRisk({ krds, subject }: { krds: KeyRateDuration[]; subjec
         <CategoryBarChart
           ariaLabel={`Key-rate ${unit === "krd" ? "durations in years" : "DV01 in dollars"} of ${subject} by tenor`}
           categories={view.shown.map((k) => k.label)}
-          series={[{ id: unit, label: unit === "krd" ? "Key-rate duration" : "Key-rate DV01", color: ACCENT, values }]}
+          series={[{ id: unit, label: unit === "krd" ? "Key-rate duration (years)" : "Key-rate DV01 ($)", color: ACCENT, values }]}
           formatY={fmt}
+          exportTitle={unit === "krd" ? "Key-rate durations" : "Key-rate DV01"}
+          categoryLabel="Tenor"
           height={240}
         />
       </div>

@@ -21,7 +21,7 @@ chart series colors, spacing, radii, and fonts are partly hardcoded.
 | **Fonts** | `web/app/layout.tsx` | `IBM_Plex_Sans` + `IBM_Plex_Mono` via `next/font/google`, exposed as `--font-plex-sans/mono`, aliased to `--font-sans/mono` in globals.css. |
 | **Background / grid / scrollbars / focus / animations** | `web/app/globals.css` | `.gridlines::before`, `body` radial gradients, `.rise`/`.menu-drop` keyframes, `::selection`, reduced-motion. |
 | **Radius** | `--radius: 14px` in globals.css **and** ad-hoc `rounded-lg`/`rounded-full` in components | Not fully tokenized. |
-| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Segmented`, `Skeleton`, `ScrollRegion`, `CopyLinkButton`. |
+| **UI primitives** | `web/components/ui/` | `Card`, `Metric`, `Segmented`, `Skeleton`, `ScrollRegion`, `CopyLinkButton`, `ExportButtons`. |
 | **Chart styling** | `web/components/charts/*` | Axes/grid use `var(--*)`; **series colors are hardcoded hex** (the main gap). |
 | **Tailwind** | `@import "tailwindcss"` in globals.css; `postcss.config.mjs` | Tailwind **v4**, no `tailwind.config.js`. CSS vars are **not** registered as Tailwind theme tokens. |
 
@@ -48,6 +48,9 @@ Shape    : --radius 14px
 - **`Skeleton`** — loading placeholder; size it like the content it replaces (no layout shift).
 - **`ScrollRegion`** — labelled, focusable horizontal scroller for wide tables (keyboard access).
 - **`CopyLinkButton`** — copies the current view's URL (inputs included) with live feedback.
+- **`ExportButtons`** — small "CSV" / "PNG" download pills (each shown only when it has a source).
+  Charts render them in the legend row when given `exportTitle`; tables place them by the heading.
+  The PNG resolves color tokens and adds the title, legend and a source line on the panel color.
 
 Feature components outside `ui/`: `KeyRateRisk`, `CommandPalette`, `LazyMount` (mounts heavy
 below-the-fold charts on approach). Everything else is inline Tailwind utilities.

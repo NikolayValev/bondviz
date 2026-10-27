@@ -4,6 +4,7 @@ import { scaleTime, scaleLinear } from "d3-scale";
 import { line, area } from "d3-shape";
 import { extent, min, max } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { SERIES } from "@/lib/chartColors";
 import type { SpreadPoint, NberRecession } from "@/lib/signal";
 
@@ -13,9 +14,13 @@ export interface SpreadHistoryChartProps {
   ariaLabel: string;
   width?: number;
   height?: number;
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
 }
 
 const M = { top: 14, right: 18, bottom: 30, left: 50 };
+
+const bps = (v: number | null) => (v === null ? null : v * 100);
 
 interface XY { t: number; v: number; }
 
@@ -118,11 +123,28 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
           </svg>
         )}
       </div>
-      <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded bg-[var(--accent)]" /> 10y–3m</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded" style={{ background: SERIES[1] }} /> 2s10s</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm bg-[var(--neg)] opacity-30" /> inverted</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm bg-[var(--muted)] opacity-30" /> NBER recession</span>
+        {props.exportTitle && (
+          <ExportButtons
+            className="ml-auto"
+            title={props.exportTitle}
+            csv={() => ({
+              columns: ["Date", "10y–3m (bps)", "2s10s (bps)"],
+              rows: props.points.map((p) => [p.date, bps(p.s10y3m), bps(p.s2s10s)]),
+            })}
+            svg={() => ref.current?.querySelector("svg")}
+            legend={[
+              { label: "10y–3m", color: "var(--accent)" },
+              { label: "2s10s", color: SERIES[1] },
+              { label: "inverted", color: "var(--neg)", opacity: 0.3 },
+              { label: "NBER recession", color: "var(--muted)", opacity: 0.3 },
+            ]}
+          />
+        )}
       </div>
     </div>
   );
