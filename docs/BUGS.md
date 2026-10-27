@@ -161,6 +161,17 @@
   "Linear" toggle (`?interp=linear`). Tests pin both: par bonds price to par at every quoted tenor,
   and the long-end forward step drops from >100 bp to <30 bp.
 
+### BUG-16 · Time axes read "Aug 26" and crowd at phone width — ✅ FIXED (2026-10-27: `timeTickLabels()`, width-aware tick count)
+
+- **Where:** `web/components/charts/LineChart.tsx` (every time-axis line chart: spreads, PCA
+  scores, Stocks).
+- **Problem:** month ticks were formatted `month: "short", year: "2-digit"`, which renders "Aug 26"
+  and reads as August 26th; and the chart always asked d3 for 6 ticks, so at 390px the labels ran
+  together ("May 26Jun 26Jul 26…").
+- **Fix:** labels read "May ’26", then "Jun", "Jul"…, with the year on the first tick and at each
+  January (plain years for multi-year spans; "Oct 14" for day ticks). The tick count is
+  `floor(innerWidth / 56)`, capped at 6. Tests cover both.
+
 ---
 
 ## Security / dependencies

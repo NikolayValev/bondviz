@@ -30,6 +30,24 @@ export interface LineChartProps {
 
 const M = { top: 12, right: 16, bottom: 36, left: 48 };
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * Labels for UTC time-axis ticks. Day ticks read "Oct 14". Month ticks read "May ’26", "Jun",
+ * "Jul"…, with the year on the first tick and again at each January, so "Aug 26" can't be
+ * mistaken for a date. Ticks that all fall on New Year read as plain years.
+ */
+export function timeTickLabels(ticks: number[]): string[] {
+  const ds = ticks.map((t) => new Date(t));
+  if (ds.some((d) => d.getUTCDate() !== 1)) return ds.map((d) => `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`);
+  if (ds.length > 1 && ds.every((d) => d.getUTCMonth() === 0)) return ds.map((d) => String(d.getUTCFullYear()));
+  return ds.map((d, i) =>
+    i === 0 || d.getUTCMonth() === 0
+      ? `${MONTHS[d.getUTCMonth()]} ’${String(d.getUTCFullYear()).slice(2)}`
+      : MONTHS[d.getUTCMonth()],
+  );
+}
+
 export const LineChart = memo(function LineChart(props: LineChartProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
@@ -59,14 +77,13 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
       .x((p) => x(p[0]))
       .y((p) => y(p[1]));
 
-    const xTicks = isTime ? xTime.ticks(6).map((d) => d.getTime()) : xLin.ticks(6);
+    // Date labels need ~55px each ("May ’26" is the widest), so a phone-width chart gets fewer time ticks.
+    const xTicks = isTime
+      ? xTime.ticks(Math.max(2, Math.min(6, Math.floor(iw / 56)))).map((d) => d.getTime())
+      : xLin.ticks(6);
     const yTicks = y.ticks(5);
-    // Under ~4 months the ticks fall inside months, so label the day; beyond that, month + year.
-    const shortSpan = isTime && xDomain[1] - xDomain[0] < 120 * 86_400_000;
-    const timeFmt: Intl.DateTimeFormatOptions = shortSpan
-      ? { month: "short", day: "numeric", timeZone: "UTC" }
-      : { month: "short", year: "2-digit", timeZone: "UTC" };
-    const fmtX = (v: number) => (isTime ? new Date(v).toLocaleDateString(undefined, timeFmt) : String(v));
+    const timeLabels = isTime ? new Map(timeTickLabels(xTicks).map((l, i) => [xTicks[i], l])) : null;
+    const fmtX = (v: number) => timeLabels?.get(v) ?? String(v);
     const fmtY = (v: number) => `${v}${props.yUnit ?? ""}`;
 
     return { iw, ih, x, y, gen, xTicks, yTicks, fmtX, fmtY };
