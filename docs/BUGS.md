@@ -192,3 +192,12 @@
 - **Gotcha:** npm 10's `npm audit fix` / `npm update` crash here (`Cannot read properties of null
   (reading 'edgesOut')`, an arborist peer-set bug). `npx npm@11 audit fix` works and writes the
   same lockfile v3 that npm 10's `npm ci` installs cleanly.
+
+### BUG-17 · zod 4.4.3 memory-exhaustion advisory — ✅ FIXED (2026-10-27)
+
+- **Where:** `web/package-lock.json` (zod is transitive, via the AI SDK the command panel uses).
+- **Problem:** GHSA-mrhx-c7xc-m3w5 (high): zod < 4.6.6 can exhaust memory validating oversized
+  constrained collections. Published after BUG-14's fix; the CI audit gate caught it on the next
+  push.
+- **Fix:** lockfile-only bump to zod 4.6.7 (`npx npm@11 audit fix --omit=dev`), verified with a
+  clean npm 10 `npm ci`, the full test suite and a production build.
