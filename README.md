@@ -121,4 +121,4 @@ Windows/Unix helper scripts live in `scripts/win/` and `scripts/unix/`, and
 
 ## License
 
-MIT
+[MIT](LICENSE)

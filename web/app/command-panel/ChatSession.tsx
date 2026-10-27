@@ -12,6 +12,7 @@ import {
 } from "@nikolayvalev/command-panel";
 import { loadMessages, saveMessages } from "./chatStorage";
 import type { ImproveRequest } from "./types";
+import { useAiStatus } from "./aiStatus";
 
 // One conversation's chat UI: messages, widget proposals, composer. Mounted
 // with key=conversation id (see ChatPanel) so switching conversations swaps
@@ -49,6 +50,8 @@ export function ChatSession({
   const pinnedIds = React.useMemo(() => new Set(widgets.map((w) => w.id)), [widgets]);
   const [input, setInput] = React.useState("");
   const [attached, setAttached] = React.useState<PinnedWidget | null>(null);
+  // "off" = no model token on this deployment: say so upfront instead of failing on first send.
+  const aiOff = useAiStatus() === "off";
   const busy = status === "submitted" || status === "streaming";
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -94,7 +97,12 @@ export function ChatSession({
   return (
     <>
       <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
-        {messages.length === 0 && (
+        {messages.length === 0 && aiOff && (
+          <p role="status" className="m-auto max-w-sm text-center text-sm text-[var(--muted)]">
+            The AI demo isn&apos;t switched on for this deployment. Every other page works without it.
+          </p>
+        )}
+        {messages.length === 0 && !aiOff && (
           <div className="m-auto flex max-w-sm flex-col items-center gap-3 text-center">
             <p className="text-sm text-[var(--faint)]">
               Ask for a chart or a stat in plain English, or start with one of these. Each
@@ -181,14 +189,14 @@ export function ChatSession({
           aria-label="Message"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask for a chart or a stat…"
-          disabled={busy}
+          placeholder={aiOff ? "AI demo unavailable here" : "Ask for a chart or a stat…"}
+          disabled={busy || aiOff}
           className="min-w-0 flex-1 rounded-lg border border-[var(--panel-border-strong)] bg-[var(--bg-2)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--faint)]"
           style={{ fontFamily: "var(--font-sans)" }}
         />
         <button
           type="submit"
-          disabled={busy || input.trim() === ""}
+          disabled={busy || aiOff || input.trim() === ""}
           className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--on-accent)] transition-opacity disabled:opacity-40"
         >
           Send

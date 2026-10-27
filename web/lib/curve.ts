@@ -4,8 +4,15 @@
 // conventions. The grid is regular (0.5Y steps), so discount factors are
 // solved in order and every prior factor already exists (no interpolation
 // of missing nodes is needed).
+//
+// Par yields between quoted tenors are interpolated linearly by default (as
+// the Python reference does). Linear interpolation has a slope jump at every
+// tenor, and the forward curve inherits it magnified by maturity
+// (f ≈ z + T·dz/dT), so the long end shows spikes at 20Y and 30Y. The
+// "pchip" option uses a monotone cubic instead: continuous slope, no
+// overshoot, the same par yields at every quoted tenor.
 
-import { interp } from "@/lib/interp";
+import { interp, makePchip } from "@/lib/interp";
 
 export interface ParPoint {
   years: number;
@@ -19,7 +26,12 @@ export interface BootstrapResult {
   forward: number[]; // 6-month implied forward (annual-compounded, decimal)
 }
 
-export function bootstrapZeros(par: ParPoint[]): BootstrapResult {
+export type ParInterpolation = "linear" | "pchip";
+
+export function bootstrapZeros(
+  par: ParPoint[],
+  { interpolation = "linear" }: { interpolation?: ParInterpolation } = {},
+): BootstrapResult {
   const empty: BootstrapResult = { grid: [], df: [], zero: [], forward: [] };
   const clean = par
     .filter((p) => Number.isFinite(p.years) && Number.isFinite(p.yieldPct))
@@ -35,7 +47,8 @@ export function bootstrapZeros(par: ParPoint[]): BootstrapResult {
   for (let t = 0.5; t <= maxT + 1e-9; t += 0.5) grid.push(Number(t.toFixed(10)));
   if (grid.length === 0) return empty;
 
-  const rGrid = grid.map((t) => interp(t, knownT, knownR));
+  const at = interpolation === "pchip" ? makePchip(knownT, knownR) : (t: number) => interp(t, knownT, knownR);
+  const rGrid = grid.map(at);
 
   const df: number[] = [];
   for (let i = 0; i < grid.length; i++) {

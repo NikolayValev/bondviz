@@ -72,7 +72,8 @@ export const dataRegistry = createDataRegistry([
     id: "yield.treasury.zeroCurve",
     description:
       "Zero-coupon (spot) curve bootstrapped from the latest par curve on a semiannual grid " +
-      "(0.5Y steps out to 30Y). Values are annual-compounded zero rates in percent.",
+      "(0.5Y steps out to 30Y), with par yields filled in between tenors by a monotone cubic " +
+      "(as on the Yield Curve page). Values are annual-compounded zero rates in percent.",
     resultSchema: {
       type: "array",
       items: { label: "string (maturity, e.g. '7.5Y')", value: "number (zero rate, percent)" },
@@ -80,7 +81,7 @@ export const dataRegistry = createDataRegistry([
     async load() {
       const row = await latestRow();
       const par = curvePoints(row).map((p) => ({ years: p.years, yieldPct: p.value }));
-      const { grid, zero } = bootstrapZeros(par);
+      const { grid, zero } = bootstrapZeros(par, { interpolation: "pchip" });
       return grid.map((t, i) => ({ label: `${t}Y`, value: zero[i] * 100 }));
     },
   },

@@ -28,6 +28,14 @@ function refuse(status: number, message: string, retryAfterMs?: number): Respons
   return new Response(message, { status, headers });
 }
 
+/** Whether the AI demo is switched on here (only a boolean; the token never leaves the server). */
+export function GET() {
+  return Response.json(
+    { configured: Boolean(process.env.GITHUB_MODELS_TOKEN) },
+    { headers: { "cache-control": "no-store" } },
+  );
+}
+
 export async function POST(req: Request) {
   if (!process.env.GITHUB_MODELS_TOKEN) {
     return refuse(503, "The AI demo isn't switched on for this deployment. Every other page works without it.");

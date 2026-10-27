@@ -12,7 +12,7 @@ vi.mock("@nikolayvalev/command-panel", () => ({
   createDataRegistry: (entries: unknown) => entries,
 }));
 
-const { POST } = await import("@/app/api/command-panel/route");
+const { GET, POST } = await import("@/app/api/command-panel/route");
 
 let ip = 0;
 const post = (body = '{"messages":[]}', addr = `10.0.0.${++ip}`) =>
@@ -52,5 +52,16 @@ describe("POST /api/command-panel", () => {
     const res = await post(JSON.stringify({ messages: [{ text: "x".repeat(200_001) }] }));
     expect(res.status).toBe(413);
     expect(seen).toHaveLength(0);
+  });
+});
+
+describe("GET /api/command-panel", () => {
+  it("reports whether the demo is configured without exposing the token", async () => {
+    const on = await (await GET()).json();
+    expect(on).toEqual({ configured: true });
+    vi.stubEnv("GITHUB_MODELS_TOKEN", "");
+    const res = GET();
+    expect(await res.json()).toEqual({ configured: false });
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });
