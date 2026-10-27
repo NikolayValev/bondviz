@@ -28,6 +28,10 @@ The key is read only in the server route (`/api/stocks/aggregates`) and is never
 browser. Without a key, the Stocks page shows a "not configured" message and the rest of the
 app is unaffected.
 
+Comparing tickers costs one Polygon call per ticker and window. Polygon's free tier allows 5 calls
+a minute, so the page waits for typing to pause before fetching, and the server caches each
+response for an hour; a rate-limited ticker shows a plain "rate limited" note.
+
 ## Command panel (GitHub Models)
 
 The Command page sends chat to GitHub Models. Set `GITHUB_MODELS_TOKEN` (a fine-grained PAT with

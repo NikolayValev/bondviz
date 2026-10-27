@@ -171,7 +171,11 @@
   - **FEAT-11a** — second token set under `[data-theme="light"]` in `globals.css`.
   - **FEAT-11b** — `ThemeToggle` in `Nav` + `localStorage` + no-FOUC inline script in `layout.tsx`.
 
-### FEAT-12 · Multi-ticker overlay on Stocks — **S/M**
+### FEAT-12 · Multi-ticker overlay on Stocks — **S/M** — ✅ DONE (`lib/relativePerformance.ts`, `StocksClient`)
+
+> Shipped 2026-10-27. Up to six tickers (one per series color) rebased to 100 with a return
+> ranking; late starters are flagged. Fetches are per ticker, cached per window, deduplicated in
+> flight and debounced while typing (Polygon's free tier is 5 calls a minute; a 429 now says so).
 
 - **Goal:** plot all entered tickers on one normalized (rebased-to-100) chart, not just the active one.
 - **Files:** `StocksClient`, `LineChart` (already multi-series).

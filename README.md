@@ -22,7 +22,7 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 | [**Yield Curve PCA**](https://bondviz.nikolayvalev.com/pca) | Level, slope and curvature factors from a from-scratch Jacobi eigensolver. |
 | [**Bond Pricing & Risk Lab**](https://bondviz.nikolayvalev.com/pricing) | PV, duration, convexity, DV01, **key-rate durations**, yield-from-price, rate-shock scenarios and holding-period returns. |
 | [**Portfolio Analyzer**](https://bondviz.nikolayvalev.com/portfolio) | Value-weighted risk and key-rate DV01s for a book of bonds, stressed with parallel shifts. |
-| [**Stocks**](https://bondviz.nikolayvalev.com/stocks) | Daily price history from Polygon.io (the key stays server-side). |
+| [**Stocks**](https://bondviz.nikolayvalev.com/stocks) | Up to six tickers on one chart rebased to 100 and ranked by return, plus daily bars, from Polygon.io (the key stays server-side). |
 | [**Command Panel**](https://bondviz.nikolayvalev.com/command-panel) | Ask for a chart in plain English; an LLM proposes a widget that can only read from a fixed registry of server-side metrics. |
 
 | | |
@@ -35,7 +35,8 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 be shared directly, for example a
 [30-year 3% bond](https://bondviz.nikolayvalev.com/pricing?coupon=3&years=30&yield=4.5) or a
 [100bp bear steepener](https://bondviz.nikolayvalev.com/yield-curve?shock=bear-steepener&bp=100).
-Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools.
+Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools, and every chart and table
+downloads as **PNG or CSV**.
 
 Every formula, and every convention behind it, is written up on the
 **[methodology page](https://bondviz.nikolayvalev.com/about)**. For example, pricing uses

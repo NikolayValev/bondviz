@@ -47,6 +47,11 @@ describe("fetchAggregates", () => {
     expect(bars).toHaveLength(2);
   });
 
+  it("explains a rate limit", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 429 })));
+    await expect(fetchAggregates("AAPL", "2025-01-01", "2025-01-31", "KEY")).rejects.toThrow(/rate limited/);
+  });
+
   it("throws on a non-OK response", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })));
     await expect(fetchAggregates("AAPL", "2025-01-01", "2025-01-31", "KEY")).rejects.toThrow();

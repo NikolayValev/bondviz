@@ -88,6 +88,7 @@ web/
 │   ├── portfolio.ts          # multi-bond aggregation built on finance.ts
 │   ├── treasury.ts           # fetch + parse Treasury XML (fast-xml-parser)
 │   ├── polygon.ts            # fetch + parse Polygon aggregates
+│   ├── relativePerformance.ts # rebase closes to 100, window returns + late-start flags (Stocks)
 │   ├── spreadsCache.ts       # in-memory promise cache for the deep spread series
 │   ├── panelLayout.ts        # command-panel dashboard grid math (span/height clamp, persist)
 │   ├── chatStore.ts          # command-panel conversation index (create/rename/delete/evict)
@@ -132,7 +133,7 @@ web/
 | `/signal` | `SignalClient` (+ `RelativeValuePanel`) | `signal`, `spreadsCache`, `relativeValue` | `/api/treasury/spreads` (1990→now) | SpreadHistoryChart, range bars |
 | `/portfolio` | `PortfolioClient` | `portfolio`, `finance` | none (book lives in the URL) | KeyRateRisk, ScenarioChart |
 | `/pca` | `PcaClient` | `pca`, `finance` | `/api/treasury/range` (1–5yr) | LineChart ×2 |
-| `/stocks` | `StocksClient` | `polygon` types | `/api/stocks/aggregates` | LineChart |
+| `/stocks` | `StocksClient` | `relativePerformance` | `/api/stocks/aggregates` (one call per ticker, debounced) | LineChart |
 | `/command-panel` | `CommandPanelClient` (browser-only mount) | registry in `command-panel/data.ts` → `treasury`, `finance`, `curve`, `carry`, `signal` | `/api/command-panel` (chat, needs `GITHUB_MODELS_TOKEN`) + `/api/command-panel/data` | LLM-proposed widgets (`@nikolayvalev/command-panel`; see `docs/DECISIONS-command-panel.md`) |
 | `/about` | `page.tsx` (static, server) | — (prose from lib docstrings) | none | none (formula blocks) |
 

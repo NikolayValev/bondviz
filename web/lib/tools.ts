@@ -63,7 +63,7 @@ export const TOOLS: Tool[] = [
     href: "/stocks",
     nav: "Stocks",
     title: "Stocks",
-    description: "Daily price history and returns for any ticker, from Polygon.io.",
+    description: "Compare up to six tickers rebased to 100, with daily price history from Polygon.io.",
     group: "Markets & AI",
   },
   {
