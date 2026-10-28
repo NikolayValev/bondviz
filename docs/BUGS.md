@@ -185,6 +185,14 @@
   inverted day, no recession, or "too early to tell" while the window is open. The summary is a
   tested scorecard: recessions without two years of data before them (1990) aren't scored.
 
+### BUG-19 · Spread-history years labelled a year early east of UTC — ✅ FIXED (2026-10-28: `scaleUtc`)
+
+- **Where:** `web/components/charts/SpreadHistoryChart.tsx` (`/signal`).
+- **Problem:** the x scale was local-time `scaleTime`, whose year ticks fall on local midnight of
+  1 January, but labels read `getUTCFullYear()`. East of Greenwich (all of Europe and Asia) that
+  instant is still 31 December in UTC, so the 2000 tick read "1999" and so on.
+- **Fix:** a UTC scale, matching the UTC-midnight dates; a test renders under `Europe/Sofia`.
+
 ---
 
 ## Security / dependencies

@@ -63,8 +63,9 @@ flowchart LR
   design tokens shown on [`/styleguide`](https://bondviz.nikolayvalev.com/styleguide).
 - **CI** runs tests, ESLint, `tsc` and a production build for the web app, and `pytest` for the
   Python reference, on every push.
-- **Accessible and fast:** zero axe-core (WCAG 2.1 AA) violations across every route at desktop
-  and mobile widths; Lighthouse accessibility, best practices and SEO are 100, and performance is
+- **Accessible and fast:** hover, touch or arrow-key any chart to read its values (announced to
+  screen readers); zero axe-core (WCAG 2.1 AA) violations across every route at desktop and
+  mobile widths; Lighthouse accessibility, best practices and SEO are 100, and performance is
   95–99 on the tools with no layout shift (local production build, Lighthouse mobile defaults).
 - **Fully keyless by default.** Treasury data needs no API key. Polygon and GitHub Models keys are
   optional and only enable the Stocks and Command pages.

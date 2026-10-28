@@ -101,6 +101,7 @@ web/
 │   ├── urlState.ts           # typed query-string codecs (num, oneOf, text, numSet, records)
 │   ├── paletteSearch.ts      # ⌘K palette ranking
 │   ├── exportCsv.ts          # CSV text (RFC 4180, formula-safe), series/category tables, file names
+│   ├── crosshair.ts          # chart readouts: nearest x, value on the drawn line, readout precision
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)
@@ -199,7 +200,10 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 - **Tokens, not hex** (aspirational — see known debt). Use `var(--accent)` etc. New code should
   not add raw hex; chart series colors are the current offender.
 - **Numbers are tabular.** Add `className="tabnum"` to any numeric display (monospace + `tnum`).
-- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`; spreads/changes use
+- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`, and the shared charts
+  (`LineChart`, `CategoryBarChart`, `SpreadHistoryChart`) are focusable: arrow keys move a
+  crosshair whose values are announced through a polite live region, and the pointer shows the
+  same readout (`useCrosshair` + `lib/crosshair.ts`). Spreads/changes use
   sign + text, not color alone; inputs have labels; inline links are underlined; wide tables go
   in a `ScrollRegion`. Baseline 2026-10-16: zero axe-core (WCAG 2.1 AA) violations on every route
   at 1280 and 390px. Keep it that way.

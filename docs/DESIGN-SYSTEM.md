@@ -52,6 +52,11 @@ Shape    : --radius 14px
   Charts render them in the legend row when given `exportTitle`; tables place them by the heading.
   The PNG resolves color tokens and adds the title, legend and a source line on the panel color.
 
+**Chart readouts.** Hovering, dragging (touch) or arrow-keying a shared chart shows a dashed
+crosshair, a dot on each series and a small `--panel-2` value box that flips sides past the
+middle; bar charts highlight the category band and add a total for stacked bars. Values use the
+chart's units at a precision that suits the data (0 decimals for bps).
+
 Feature components outside `ui/`: `KeyRateRisk`, `CommandPalette`, `LazyMount` (mounts heavy
 below-the-fold charts on approach). Everything else is inline Tailwind utilities.
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
-import { LineChart, timeTickLabels } from "@/components/charts/LineChart";
+import { render, fireEvent } from "@testing-library/react";
+import { LineChart, maturityLabel, timeTickLabels } from "@/components/charts/LineChart";
 
 describe("LineChart", () => {
   it("renders one path per series when given explicit dimensions", () => {
@@ -72,3 +72,58 @@ describe("timeTickLabels", () => {
     expect(timeTickLabels(["2020-01-01", "2022-01-01", "2024-01-01"].map(Date.parse))).toEqual(["2020", "2022", "2024"]);
   });
 });
+
+describe("LineChart readout", () => {
+  const curve = (
+    <LineChart
+      ariaLabel="curve"
+      width={400}
+      height={200}
+      xLabel="Maturity (years)"
+      yLabel="Yield (%)"
+      yUnit="%"
+      series={[
+        { id: "today", label: "Today", color: "red", points: [[0.25, 4.26], [2, 4.79], [10, 5.21]] },
+        { id: "ago", label: "1Y ago", color: "blue", points: [[0.25, 4.5], [10, 4.4]] },
+      ]}
+    />
+  );
+
+  it("steps through values with the arrow keys and announces them", () => {
+    const { container } = render(curve);
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    expect(svg.getAttribute("tabindex")).toBe("0");
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    const live = container.querySelector("[aria-live]") as HTMLElement;
+    expect(live.textContent).toBe("3M: Today 4.26%, 1Y ago 4.50%");
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    // 1Y ago has no 2Y point: read off its drawn line between 3M and 10Y.
+    expect(live.textContent).toBe("2Y: Today 4.79%, 1Y ago 4.48%");
+    fireEvent.keyDown(svg, { key: "End" });
+    expect(live.textContent).toBe("10Y: Today 5.21%, 1Y ago 4.40%");
+    expect(container.querySelectorAll(".crosshair circle")).toHaveLength(2);
+    fireEvent.keyDown(svg, { key: "Escape" });
+    expect(container.querySelector(".crosshair")).toBeNull();
+  });
+
+  it("follows the pointer without announcing it", () => {
+    const { container, getByText } = render(curve);
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    // Plot starts 48px in and spans 336px over 0–10 years: 48 + 336 × 0.2 ≈ the 2Y point.
+    fireEvent.pointerMove(svg, { clientX: 48 + 336 * 0.2 });
+    expect(getByText("2Y")).toBeInTheDocument();
+    expect(container.querySelector("[aria-live]")?.textContent).toBe("");
+    fireEvent.pointerLeave(svg);
+    expect(container.querySelector(".crosshair")).toBeNull();
+  });
+});
+
+describe("maturityLabel", () => {
+  it("reads maturities as tenors", () => {
+    expect(maturityLabel(1 / 12)).toBe("1M");
+    expect(maturityLabel(0.5)).toBe("6M");
+    expect(maturityLabel(7.5)).toBe("7.5Y");
+    expect(maturityLabel(30)).toBe("30Y");
+  });
+});
+
