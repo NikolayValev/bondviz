@@ -102,6 +102,7 @@ web/
 │   ├── paletteSearch.ts      # ⌘K palette ranking
 │   ├── exportCsv.ts          # CSV text (RFC 4180, formula-safe), series/category tables, file names
 │   ├── crosshair.ts          # chart readouts: nearest x, value on the drawn line, readout precision
+│   ├── snapshot.ts           # Home's market snapshot: latest KPIs, month change, curve a year ago
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)

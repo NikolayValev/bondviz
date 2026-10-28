@@ -14,6 +14,7 @@ import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
 import { ShockScenario } from "./ShockScenario";
 import { LazyMount } from "@/components/LazyMount";
+import { nearestRow } from "@/lib/snapshot";
 import { Segmented } from "@/components/ui/Segmented";
 
 const COMPARE = [
@@ -36,18 +37,6 @@ const INTERPOLATIONS = [
   { label: "Monotone cubic", value: "pchip" as const },
   { label: "Linear", value: "linear" as const },
 ];
-
-function nearest(rows: YieldRow[], target: string): YieldRow | null {
-  if (rows.length === 0) return null;
-  let best = rows[0];
-  let bestDiff = Infinity;
-  const tt = new Date(target).getTime();
-  for (const r of rows) {
-    const diff = Math.abs(new Date(r.date).getTime() - tt);
-    if (diff < bestDiff) { bestDiff = diff; best = r; }
-  }
-  return best;
-}
 
 export function YieldCurveClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
@@ -85,7 +74,7 @@ export function YieldCurveClient() {
     for (const c of COMPARE) {
       const target = new Date(latest.date);
       target.setMonth(target.getMonth() - c.months);
-      const row = nearest(rows, iso(target));
+      const row = nearestRow(rows, iso(target));
       if (row) {
         const pts = rowToCurve(row).map((p) => [p.years, p.yield] as [number, number]);
         if (pts.length) curveSeries.push({ id: c.label, label: c.label, color: c.color, points: pts });
