@@ -232,7 +232,7 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 ## Testing & tooling
 
-- **Vitest** (`npm test`), jsdom env, Testing Library for components. 39 test files, 242 tests.
+- **Vitest** (`npm test`), jsdom env, Testing Library for components. 48 test files, 323 tests (2026-10-28).
   Every `lib/*.ts` has a sibling `*.test.ts`; charts have render/smoke tests; API routes stub
   `fetch` with `vi.stubGlobal`.
 - **ESLint** via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`). Run with

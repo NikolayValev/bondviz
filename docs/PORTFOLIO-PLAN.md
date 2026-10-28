@@ -30,6 +30,13 @@ fixed with monotone cubic par interpolation (BUG-15).
 write-up is drafted in [PORTFOLIO-ENTRY.md](PORTFOLIO-ENTRY.md). Still needs you: production
 Lighthouse, repo description / website / pin, and the ETL-branch decision.
 
+**2026-10-28:** a fresh critical pass over every page. The recession signal is scored by inversion
+period with lead times (BUG-18; it was counting one-day flickers, 42 "episodes" for five
+inversions). Every shared chart has a hover / touch / keyboard readout. Home leads with a live
+chart and month moves. Curve charts use a √ maturity axis, and bar labels no longer collide on
+phones (BUG-20). Spread-history years were a year early east of UTC (BUG-19). Zod advisory
+patched (BUG-17). README screenshots refreshed.
+
 ## Where things stood (audit, 2026-10-14)
 
 | Check | Result |

@@ -1,7 +1,7 @@
 # BondViz: portfolio entry
 
 Copy for a portfolio site, résumé or LinkedIn project. Every claim here can be checked in the repo
-or on the live site. Last updated 2026-10-27.
+or on the live site. Last updated 2026-10-28.
 
 ## One line
 
@@ -27,10 +27,12 @@ formula is written up on the site.
   its lead time to the recession that followed (or "too early to tell"), and today's spread is
   shown as a z-score and percentile of its own history.
 - **Engineering:** TypeScript strict; the math and parsing live in pure `lib/` modules, each with
-  a Vitest suite beside it (291 web tests). CI runs tests, lint, typecheck, build and a
+  a Vitest suite beside it (323 web tests). CI runs tests, lint, typecheck, build and a
   dependency-audit gate, plus the original Python reference's pytest suite.
 - **No charting library:** D3 computes scales and paths, React renders the SVG, colors come from
-  design tokens; the charts and data tables download as PNG or CSV.
+  design tokens. Hover, touch or arrow-key any chart to read its values (announced to screen
+  readers), curves use a √ maturity axis so the front end is legible, and the charts and data
+  tables download as PNG or CSV.
 - **Shareable and accessible:** every input lives in the URL, so any configured bond, portfolio or
   scenario is a link; zero axe-core (WCAG 2.1 AA) violations on every route at desktop and mobile
   widths.
