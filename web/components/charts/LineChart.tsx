@@ -1,6 +1,6 @@
 "use client";
 import { memo, useId, useMemo } from "react";
-import { scaleLinear, scaleUtc } from "d3-scale";
+import { scaleLinear, scaleSqrt, scaleUtc } from "d3-scale";
 import { line } from "d3-shape";
 import { extent } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
@@ -24,6 +24,9 @@ export interface LineChartProps {
   xLabel?: string;
   yLabel?: string;
   xType?: "linear" | "time";
+  /** "sqrt" spaces maturities by √years so the 1M–2Y front end isn't crushed against the axis;
+   *  for maturity axes starting at 0. Ignored for time axes. */
+  xScale?: "linear" | "sqrt";
   yUnit?: string;
   zeroBaseline?: boolean;
   /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
@@ -33,6 +36,9 @@ export interface LineChartProps {
 }
 
 const M = { top: 12, right: 16, bottom: 36, left: 48 };
+
+/** Tick maturities for a √ axis: dense where the tenors are, at round numbers. */
+const SQRT_TICKS = [0, 1, 2, 5, 10, 20, 30, 50];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -82,9 +88,12 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
     // Time x values are epoch-ms at UTC midnight (from "YYYY-MM-DD"), so a UTC time scale puts
     // ticks on real calendar boundaries; a linear scale would tick at arbitrary milliseconds.
     const isTime = props.xType === "time";
+    const isSqrt = !isTime && props.xScale === "sqrt";
     const xDomain = [x0 ?? 0, x1 ?? 1];
     const xTime = scaleUtc().domain(xDomain).range([0, iw]);
-    const xLin = scaleLinear().domain(xDomain).range([0, iw]).nice();
+    const xLin = isSqrt
+      ? scaleSqrt().domain([0, Math.max(xDomain[1], 1e-9)]).range([0, iw])
+      : scaleLinear().domain(xDomain).range([0, iw]).nice();
     const x = (v: number) => (isTime ? xTime(v) : xLin(v));
     const y = scaleLinear().domain([y0 ?? 0, y1 ?? 1]).range([ih, 0]).nice();
 
@@ -95,7 +104,9 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
     // Date labels need ~55px each ("May ’26" is the widest), so a phone-width chart gets fewer time ticks.
     const xTicks = isTime
       ? xTime.ticks(Math.max(2, Math.min(6, Math.floor(iw / 56)))).map((d) => d.getTime())
-      : xLin.ticks(6);
+      : isSqrt
+        ? SQRT_TICKS.filter((t) => t <= xDomain[1] + 1e-9)
+        : xLin.ticks(6);
     const yTicks = y.ticks(5);
     const timeLabels = isTime ? new Map(timeTickLabels(xTicks).map((l, i) => [xTicks[i], l])) : null;
     const fmtX = (v: number) => timeLabels?.get(v) ?? String(v);
@@ -106,8 +117,8 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
     const sorted = props.series.map((s) => [...s.points].sort((a, b) => a[0] - b[0]));
     const invertX = (px: number) => (isTime ? xTime.invert(px).getTime() : xLin.invert(px));
 
-    return { iw, ih, x, y, gen, xTicks, yTicks, fmtX, fmtY, xs, sorted, invertX, ySpan: (y1 ?? 0) - (y0 ?? 0) };
-  }, [props.series, props.zeroBaseline, props.xType, props.yUnit, width, height]);
+    return { iw, ih, x, y, gen, xTicks, yTicks, fmtX, fmtY, xs, sorted, invertX, isSqrt, ySpan: (y1 ?? 0) - (y0 ?? 0) };
+  }, [props.series, props.zeroBaseline, props.xType, props.xScale, props.yUnit, width, height]);
 
   const cross = useCrosshair(content?.xs.length ?? 0);
   const readout = useMemo(() => {
@@ -183,7 +194,7 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
               ))}
               {props.xLabel && (
                 <text x={content.iw / 2} y={content.ih + 32} textAnchor="middle" fontSize={12} fill="var(--muted)">
-                  {props.xLabel}
+                  {content.isSqrt ? `${props.xLabel} · √ scale` : props.xLabel}
                 </text>
               )}
               {props.yLabel && (

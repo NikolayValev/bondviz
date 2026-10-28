@@ -137,6 +137,7 @@ export function YieldCurveClient() {
           exportTitle={`Treasury yield curve ${view.latest.date}`}
           series={[view.curveSeries[0]]}
           xLabel="Maturity (years)"
+          xScale="sqrt"
           yLabel="Yield (%)"
           yUnit="%"
         />
@@ -150,6 +151,7 @@ export function YieldCurveClient() {
           exportTitle="Curve shifts vs the past"
           series={view.curveSeries}
           xLabel="Maturity (years)"
+          xScale="sqrt"
           yLabel="Yield (%)"
           yUnit="%"
         />
@@ -180,6 +182,7 @@ export function YieldCurveClient() {
             series={bootstrapSeries}
             exportTitle={`Zero and forward curve (${url.interp === "pchip" ? "monotone cubic" : "linear"})`}
             xLabel="Maturity (years)"
+            xScale="sqrt"
             yLabel="Rate (%)"
             yUnit="%"
           />

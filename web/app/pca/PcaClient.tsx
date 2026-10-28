@@ -126,6 +126,7 @@ export function PcaClient() {
               exportTitle="PCA factor loadings"
               series={charts.loadingSeries}
               xLabel="Maturity (years)"
+              xScale="sqrt"
               yLabel="Loading"
               zeroBaseline
             />

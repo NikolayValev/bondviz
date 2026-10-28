@@ -127,3 +127,28 @@ describe("maturityLabel", () => {
   });
 });
 
+describe("LineChart √ maturity axis", () => {
+  it("spaces maturities by their square root, with round-number ticks", () => {
+    const { container } = render(
+      <LineChart
+        ariaLabel="curve"
+        width={400}
+        height={200}
+        xLabel="Maturity (years)"
+        xScale="sqrt"
+        series={[{ id: "c", label: "C", color: "red", points: [[1 / 12, 4.1], [2, 4.8], [30, 5.6]] }]}
+      />,
+    );
+    const iw = 400 - 48 - 16;
+    // x ticks are the groups holding a 6px tick mark (y ticks hold a full-width grid line).
+    const ticks = Array.from(container.querySelectorAll("g[transform]"))
+      .filter((g) => g.querySelector(":scope > line")?.getAttribute("y2") === "6")
+      .map((g) => ({ tf: g.getAttribute("transform") ?? "", label: g.textContent ?? "" }));
+    expect(ticks.map((t) => t.label)).toEqual(["0", "1", "2", "5", "10", "20", "30"]);
+    const xOf = (label: string) => Number(/translate\(([\d.]+)/.exec(ticks.find((t) => t.label === label)!.tf)?.[1]);
+    expect(xOf("1")).toBeCloseTo(Math.sqrt(1 / 30) * iw, 6);
+    expect(xOf("30")).toBeCloseTo(iw, 6);
+    expect(container.textContent).toContain("Maturity (years) · √ scale");
+  });
+});
+

@@ -96,7 +96,11 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
     });
 
     const centers = props.categories.map((cat) => (x(cat) ?? 0) + bw / 2);
-    return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw, centers, span: hi - lo };
+    // Label every nth category when the bands are narrower than a label (11px mono ≈ 6.6px a
+    // character, plus a gap), so "10Y20Y30Y" doesn't run together on a phone.
+    const longest = Math.max(...props.categories.map((cat) => cat.length));
+    const labelEvery = Math.max(1, Math.ceil((longest * 6.6 + 8) / x.step()));
+    return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw, centers, span: hi - lo, labelEvery };
   }, [props.categories, props.series, width, height]);
 
   const fmtY = props.formatY ?? ((v: number) => `${Math.round(v)}${props.yUnit ?? ""}`);
@@ -170,7 +174,7 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
               {c.rects.map((r) => (
                 <rect key={r.key} className="bar" x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} rx={1.5} />
               ))}
-              {props.categories.map((cat) => (
+              {props.categories.map((cat, j) => j % c.labelEvery === 0 && (
                 <text
                   key={`x${cat}`}
                   x={(c.x(cat) ?? 0) + c.bw / 2}

@@ -57,6 +57,11 @@ crosshair, a dot on each series and a small `--panel-2` value box that flips sid
 middle; bar charts highlight the category band and add a total for stacked bars. Values use the
 chart's units at a precision that suits the data (0 decimals for bps).
 
+**Maturity axes** use `xScale="sqrt"` (ticks 0, 1, 2, 5, 10, 20, 30; the axis title adds "√ scale"),
+so the 1M–2Y tenors aren't crushed into the first few percent of the width. **Bar labels** thin out
+to every nth category when the bands are narrower than a label (phones), and the readout still
+gives every bar.
+
 Feature components outside `ui/`: `KeyRateRisk`, `CommandPalette`, `LazyMount` (mounts heavy
 below-the-fold charts on approach). Everything else is inline Tailwind utilities.
 

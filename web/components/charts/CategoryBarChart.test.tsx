@@ -61,3 +61,20 @@ describe("CategoryBarChart readout", () => {
   });
 });
 
+describe("CategoryBarChart labels", () => {
+  const tenors = ["1M", "2M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"];
+  const labels = (width: number) => {
+    const { container, unmount } = render(
+      <CategoryBarChart width={width} ariaLabel="t" categories={tenors} series={[{ id: "s", label: "S", color: "red", values: tenors.map(() => 1) }]} />,
+    );
+    const out = Array.from(container.querySelectorAll("text")).map((t) => t.textContent).filter((t) => tenors.includes(t ?? ""));
+    unmount();
+    return out;
+  };
+
+  it("labels every category when there's room and thins them out when there isn't", () => {
+    expect(labels(900)).toEqual(tenors);
+    expect(labels(330)).toEqual(["1M", "3M", "1Y", "3Y", "7Y", "20Y"]);
+  });
+});
+

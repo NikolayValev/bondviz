@@ -219,6 +219,7 @@ export function StyleguideClient() {
               ariaLabel="Sample line chart"
               series={LINE_SERIES}
               xLabel="Maturity (years)"
+              xScale="sqrt"
               yLabel="Yield (%)"
               yUnit="%"
               exportTitle="Sample line chart"

@@ -127,6 +127,7 @@ export default async function Home() {
                   ariaLabel={`Treasury par yield curve on ${snap.date}${snap.yearAgo ? ` and on ${snap.yearAgo.date}` : ""}`}
                   series={curveSeries(snap)}
                   xLabel="Maturity (years)"
+                  xScale="sqrt"
                   yLabel="Yield (%)"
                   yUnit="%"
                   height={232}

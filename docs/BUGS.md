@@ -193,6 +193,15 @@
   instant is still 31 December in UTC, so the 2000 tick read "1999" and so on.
 - **Fix:** a UTC scale, matching the UTC-midnight dates; a test renders under `Europe/Sofia`.
 
+### BUG-20 · Curve charts crushed the front end; bar labels ran together on phones — ✅ FIXED (2026-10-28)
+
+- **Where:** every yield-curve `LineChart`; `CategoryBarChart` (shock shifts, carry, key rates).
+- **Problem:** on a linear 0–30y axis, six of the twelve tenors (1M–2Y) sat in the first 7% of the
+  width, so the front end, where curves move most, was unreadable. With 12 bars at 390px the
+  category labels touched ("10Y20Y30Y").
+- **Fix:** a square-root maturity scale (`xScale="sqrt"`) on all seven curve charts, labelled
+  "√ scale"; bar charts label every nth category when a label doesn't fit its band.
+
 ---
 
 ## Security / dependencies

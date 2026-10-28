@@ -96,6 +96,7 @@ export function ShockScenario({
             exportTitle={`${sizeBps} bp ${meta?.label ?? kind} curve`}
             series={view.series}
             xLabel="Maturity (years)"
+            xScale="sqrt"
             yLabel="Yield (%)"
             yUnit="%"
             height={260}
