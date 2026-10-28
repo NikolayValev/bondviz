@@ -10,7 +10,7 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 
 [![CI](https://github.com/NikolayValev/bondviz/actions/workflows/ci.yml/badge.svg)](https://github.com/NikolayValev/bondviz/actions/workflows/ci.yml)
 
-![Yield Curve Explorer: the live Treasury curve against 1, 3, 6 and 12 months ago](docs/img/yield-curve.png)
+![Yield Curve Explorer: the live Treasury curve against 1, 3, 6 and 12 months ago, with the hover readout at 2Y](docs/img/yield-curve.png)
 
 ## What's inside
 
@@ -28,8 +28,8 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 | | |
 | --- | --- |
 | ![Curve shock builder: a 50bp steepening twist and its effect on 2Y–30Y benchmark bonds](docs/img/shock.png) | ![Key-rate DV01s of a 2Y/5Y/10Y portfolio](docs/img/krd.png) |
-| ![Bond Pricing & Risk Lab](docs/img/pricing.png) | ![Inversion & Recession Signal: today vs its own history](docs/img/signal.png) |
-| ![Yield Curve PCA](docs/img/pca.png) | ![Home with the live market snapshot](docs/img/home.png) |
+| ![Bond Pricing & Risk Lab](docs/img/pricing.png) | ![Inversion & Recession Signal: every daily spread since 1990 and the five inversion periods with their lead times](docs/img/signal.png) |
+| ![Yield Curve PCA](docs/img/pca.png) | ![Home: the live snapshot with month moves and the curve against a year ago](docs/img/home.png) |
 
 **Every view is a link.** Inputs live in the URL, so a configured bond, portfolio or scenario can
 be shared directly, for example a
