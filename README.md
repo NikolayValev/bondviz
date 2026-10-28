@@ -18,7 +18,7 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 | --- | --- |
 | [**Yield Curve Explorer**](https://bondviz.nikolayvalev.com/yield-curve) | The live par curve, a **curve-shock builder** (parallel, bull/bear steepeners and flatteners, twist, butterfly) that reprices benchmark bonds, shifts versus the past year, 2s10s / 3m10y history, a date × tenor heatmap, and a bootstrapped zero and 6-month forward curve. |
 | [**Carry & Roll-Down**](https://bondviz.nikolayvalev.com/carry) | Horizon carry, roll-down and the breakeven sell-off cushion for every tenor. |
-| [**Inversion & Recession Signal**](https://bondviz.nikolayvalev.com/signal) | Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion episode, and where today sits in its own history (z-score, percentile). |
+| [**Inversion & Recession Signal**](https://bondviz.nikolayvalev.com/signal) | Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion period and its lead time to the recession that followed, and where today sits in its own history (z-score, percentile). |
 | [**Yield Curve PCA**](https://bondviz.nikolayvalev.com/pca) | Level, slope and curvature factors from a from-scratch Jacobi eigensolver. |
 | [**Bond Pricing & Risk Lab**](https://bondviz.nikolayvalev.com/pricing) | PV, duration, convexity, DV01, **key-rate durations**, yield-from-price, rate-shock scenarios and holding-period returns. |
 | [**Portfolio Analyzer**](https://bondviz.nikolayvalev.com/portfolio) | Value-weighted risk and key-rate DV01s for a book of bonds, stressed with parallel shifts. |

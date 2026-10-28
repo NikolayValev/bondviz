@@ -172,6 +172,19 @@
   January (plain years for multi-year spans; "Oct 14" for day ticks). The tick count is
   `floor(innerWidth / 56)`, capped at 6. Tests cover both.
 
+### BUG-18 · Recession signal counted day-to-day flickers as separate inversions — ✅ FIXED (2026-10-28: `inversionPeriods()`, `signalRecord()`)
+
+- **Where:** `web/lib/signal.ts`, `/signal`.
+- **Problem:** every run of inverted days was its own "episode", so 1990–2026 showed 42 episodes
+  ("21 followed by recession") where there were five inversions; one-day dips of −1 to −3 bps
+  filled the table. Episodes whose 24-month window was still open were marked "no recession",
+  and while inverted the summary read "inverted before {episodes} of the last 4 recessions",
+  mixing episode and recession counts.
+- **Fix:** runs less than six months apart merge into a **period** (inverted days, runs, deepest
+  point). Each period is scored once: the recession that followed with its lead from the first
+  inverted day, no recession, or "too early to tell" while the window is open. The summary is a
+  tested scorecard: recessions without two years of data before them (1990) aren't scored.
+
 ---
 
 ## Security / dependencies

@@ -3,7 +3,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { SpreadHistoryChart } from "@/components/charts/SpreadHistoryChart";
-import { currentStatus, inversionEpisodes, NBER_RECESSIONS, SpreadPoint } from "@/lib/signal";
+import {
+  currentStatus,
+  describeRecord,
+  inversionEpisodes,
+  inversionPeriods,
+  NBER_RECESSIONS,
+  signalRecord,
+  SIGNAL_WINDOW_MONTHS,
+  type PeriodOutcome,
+  type SpreadPoint,
+} from "@/lib/signal";
 import { loadSpreads } from "@/lib/spreadsCache";
 import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
@@ -15,6 +25,23 @@ const URL_DEFAULTS = { window: "10Y" as RvWindow };
 const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { window: oneOf(RV_WINDOWS.map((w) => w.label)) };
 
 const bps = (pp: number | null) => (pp === null ? "—" : `${pp >= 0 ? "+" : ""}${(pp * 100).toFixed(0)} bps`);
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthYear = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
+
+// The 2020 recession was the pandemic shock: the 2019 inversion counts as a hit by the rule, but
+// few read it as having forecast that.
+const PANDEMIC_RECESSION = "2020-02-01";
+
+function outcomeText(o: PeriodOutcome): string {
+  if (o.kind === "recession")
+    return `Recession from ${monthYear(o.recessionStart)}, ${o.leadMonths} months after the first inversion${o.recessionStart === PANDEMIC_RECESSION ? " †" : ""}`;
+  if (o.kind === "pending") return `Too early to tell: window open until ${monthYear(o.windowEnds)}`;
+  return `No recession within ${SIGNAL_WINDOW_MONTHS} months`;
+}
+
+const outcomeColor = (o: PeriodOutcome) =>
+  o.kind === "recession" ? "var(--neg)" : o.kind === "pending" ? "var(--warn)" : "var(--muted)";
 
 export function SignalClient() {
   const [points, setPoints] = useState<SpreadPoint[] | null>(null);
@@ -30,10 +57,13 @@ export function SignalClient() {
   const view = useMemo(() => {
     if (!points) return null;
     const status = currentStatus(points);
-    const forward = inversionEpisodes(points); // chronological
-    const episodes = forward.slice().reverse(); // most recent first
-    const withRec = forward.filter((e) => e.recessionFollowed).length;
-    return { status, episodes, total: forward.length, withRec };
+    const first = points[0]?.date ?? "";
+    const forward = inversionPeriods(inversionEpisodes(points), status.date ?? first); // chronological
+    return {
+      status,
+      periods: forward.slice().reverse(), // most recent first
+      record: forward.length ? describeRecord(signalRecord(forward, first), first) : "",
+    };
   }, [points]);
 
   // The heading renders in every state (prerendered; LCP; heading on error).
@@ -60,10 +90,12 @@ export function SignalClient() {
     );
 
   const { status } = view;
-  const summary =
-    status.streakDays > 0
-      ? `10y–3m has inverted before ${view.withRec} of the last ${NBER_RECESSIONS.length} recessions; currently inverted ${status.streakDays} trading days.`
-      : `10y–3m is currently positive (${bps(status.s10y3m)}). ${view.total} inversion episodes since 1990, ${view.withRec} followed by recession within 24 months.`;
+  const summary = [
+    status.inverted
+      ? `10y–3m is inverted (${bps(status.s10y3m)}), ${status.streakDays} trading days in a row.`
+      : `10y–3m is ${bps(status.s10y3m)} today.`,
+    view.record,
+  ].join(" ");
 
   return (
     <div className="space-y-6">
@@ -108,45 +140,65 @@ export function SignalClient() {
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg">Inversion episodes (10y–3m)</h2>
+          <h2 className="text-lg">Inversion periods (10y–3m)</h2>
           <ExportButtons
-            title="Inversion episodes 10y-3m"
+            title="Inversion periods 10y-3m"
             csv={() => ({
-              columns: ["Start", "End", "Days", "Max depth (bps)", "Recession within 24 months"],
-              rows: view.episodes.map((e) => [e.start, e.end, e.days, e.maxDepthBps, e.recessionFollowed ? "yes" : "no"]),
+              columns: ["Start", "End", "Days inverted", "Separate runs", "Deepest (bps)", "Outcome", "Recession start", "Lead (months)"],
+              rows: view.periods.map((p) => [
+                p.start,
+                p.end,
+                p.invertedDays,
+                p.runs,
+                p.maxDepthBps,
+                p.outcome.kind,
+                p.outcome.kind === "recession" ? p.outcome.recessionStart : null,
+                p.outcome.kind === "recession" ? p.outcome.leadMonths : null,
+              ]),
             })}
           />
         </div>
-        <ScrollRegion label="Inversion episodes table">
+        <ScrollRegion label="Inversion periods table">
           <table className="w-full text-sm tabnum">
             <thead>
               <tr className="text-left text-[var(--muted)]">
                 <th className="py-1 pr-4 font-medium">Start</th>
                 <th className="py-1 pr-4 font-medium">End</th>
-                <th className="py-1 pr-4 font-medium">Days</th>
-                <th className="py-1 pr-4 font-medium">Max depth</th>
-                <th className="py-1 pr-4 font-medium">Recession ≤24m</th>
+                <th className="py-1 pr-4 text-right font-medium">Days inverted</th>
+                <th className="py-1 pr-4 text-right font-medium">Runs</th>
+                <th className="py-1 pr-4 text-right font-medium">Deepest</th>
+                <th className="py-1 font-medium">What followed</th>
               </tr>
             </thead>
             <tbody>
-              {view.episodes.map((e) => (
-                <tr key={e.start} className="border-t border-[var(--panel-border)]">
-                  <td className="py-1.5 pr-4 text-[var(--text)]">{e.start}</td>
-                  <td className="py-1.5 pr-4">{e.end}</td>
-                  <td className="py-1.5 pr-4">{e.days}</td>
-                  <td className="py-1.5 pr-4" style={{ color: "var(--neg)" }}>{e.maxDepthBps.toFixed(0)} bps</td>
-                  <td className="py-1.5 pr-4" style={{ color: e.recessionFollowed ? "var(--neg)" : "var(--muted)" }}>
-                    {e.recessionFollowed ? "✓" : "✗"}
+              {view.periods.map((p) => (
+                <tr key={p.start} className="border-t border-[var(--panel-border)]">
+                  <td className="py-1.5 pr-4 text-[var(--text)]">{p.start}</td>
+                  <td className="py-1.5 pr-4">{p.end}</td>
+                  <td className="py-1.5 pr-4 text-right">{p.invertedDays}</td>
+                  <td className="py-1.5 pr-4 text-right">{p.runs}</td>
+                  <td className="py-1.5 pr-4 text-right" style={{ color: "var(--neg)" }}>
+                    {p.maxDepthBps.toFixed(0)} bps
+                  </td>
+                  <td className="py-1.5" style={{ color: outcomeColor(p.outcome) }}>
+                    {outcomeText(p.outcome)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </ScrollRegion>
-        <p className="mt-3 text-xs text-[var(--faint)]">
-          An episode is a maximal run of days with 10y–3m ≤ 0. &ldquo;Recession ≤24m&rdquo; marks episodes that
-          overlap an NBER recession or end no more than 24 months before one starts.
-        </p>
+        <div className="mt-3 space-y-1 text-xs text-[var(--faint)]">
+          <p>
+            A period is a stretch of days with 10y–3m ≤ 0; runs less than six months apart count as one
+            period. A recession follows a period if it overlaps it or starts within {SIGNAL_WINDOW_MONTHS} months
+            after it ends; the lead is counted from the first inverted day. The 1990 recession is left out
+            because the data starts six months before it.
+          </p>
+          {view.periods.some((p) => p.outcome.kind === "recession" && p.outcome.recessionStart === PANDEMIC_RECESSION) && (
+            <p>† The 2020 recession was the pandemic shock. It counts as a hit by this rule, but few read the 2019 inversion as having forecast it.</p>
+          )}
+        </div>
       </Card>
     </div>
   );

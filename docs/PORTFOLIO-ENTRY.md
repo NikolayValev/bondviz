@@ -23,8 +23,9 @@ formula is written up on the site.
   twist, butterfly) that reprice benchmark bonds, and key-rate durations that sum to the parallel
   duration.
 - **Market signal with honest framing:** every daily 10y–3m and 2s10s spread since 1990 against
-  NBER recessions, each inversion episode, and today's spread as a z-score and percentile of its
-  own history.
+  NBER recessions. Day-to-day flickers are merged into five inversion periods, each scored with
+  its lead time to the recession that followed (or "too early to tell"), and today's spread is
+  shown as a z-score and percentile of its own history.
 - **Engineering:** TypeScript strict; the math and parsing live in pure `lib/` modules, each with
   a Vitest suite beside it (291 web tests). CI runs tests, lint, typecheck, build and a
   dependency-audit gate, plus the original Python reference's pytest suite.
