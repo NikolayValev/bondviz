@@ -11,8 +11,9 @@ export interface CsvTable {
 /**
  * One cell, RFC 4180 style: quoted when it holds a comma, quote or line break. Numbers are
  * written plainly to at most 6 decimals, which also trims float noise (0.1 + 0.2 → 0.3; well
- * past the precision of a yield in % or a spread in bps); missing or non-finite values are empty. Text a spreadsheet would run as a formula (leading =, +, -, @) gets an apostrophe, so
- * pass numbers as numbers: a negative number stays numeric.
+ * past the precision of a yield in % or a spread in bps); missing or non-finite values are
+ * empty. Text a spreadsheet would run as a formula (leading =, +, -, @) gets an apostrophe,
+ * so pass numbers as numbers: a negative number stays numeric.
  */
 export function csvCell(v: CsvCell): string {
   if (v === null || v === undefined) return "";
