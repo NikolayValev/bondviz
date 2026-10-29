@@ -161,6 +161,47 @@
   "Linear" toggle (`?interp=linear`). Tests pin both: par bonds price to par at every quoted tenor,
   and the long-end forward step drops from >100 bp to <30 bp.
 
+### BUG-16 · Time axes read "Aug 26" and crowd at phone width — ✅ FIXED (2026-10-27: `timeTickLabels()`, width-aware tick count)
+
+- **Where:** `web/components/charts/LineChart.tsx` (every time-axis line chart: spreads, PCA
+  scores, Stocks).
+- **Problem:** month ticks were formatted `month: "short", year: "2-digit"`, which renders "Aug 26"
+  and reads as August 26th; and the chart always asked d3 for 6 ticks, so at 390px the labels ran
+  together ("May 26Jun 26Jul 26…").
+- **Fix:** labels read "May ’26", then "Jun", "Jul"…, with the year on the first tick and at each
+  January (plain years for multi-year spans; "Oct 14" for day ticks). The tick count is
+  `floor(innerWidth / 56)`, capped at 6. Tests cover both.
+
+### BUG-18 · Recession signal counted day-to-day flickers as separate inversions — ✅ FIXED (2026-10-28: `inversionPeriods()`, `signalRecord()`)
+
+- **Where:** `web/lib/signal.ts`, `/signal`.
+- **Problem:** every run of inverted days was its own "episode", so 1990–2026 showed 42 episodes
+  ("21 followed by recession") where there were five inversions; one-day dips of −1 to −3 bps
+  filled the table. Episodes whose 24-month window was still open were marked "no recession",
+  and while inverted the summary read "inverted before {episodes} of the last 4 recessions",
+  mixing episode and recession counts.
+- **Fix:** runs less than six months apart merge into a **period** (inverted days, runs, deepest
+  point). Each period is scored once: the recession that followed with its lead from the first
+  inverted day, no recession, or "too early to tell" while the window is open. The summary is a
+  tested scorecard: recessions without two years of data before them (1990) aren't scored.
+
+### BUG-19 · Spread-history years labelled a year early east of UTC — ✅ FIXED (2026-10-28: `scaleUtc`)
+
+- **Where:** `web/components/charts/SpreadHistoryChart.tsx` (`/signal`).
+- **Problem:** the x scale was local-time `scaleTime`, whose year ticks fall on local midnight of
+  1 January, but labels read `getUTCFullYear()`. East of Greenwich (all of Europe and Asia) that
+  instant is still 31 December in UTC, so the 2000 tick read "1999" and so on.
+- **Fix:** a UTC scale, matching the UTC-midnight dates; a test renders under `Europe/Sofia`.
+
+### BUG-20 · Curve charts crushed the front end; bar labels ran together on phones — ✅ FIXED (2026-10-28)
+
+- **Where:** every yield-curve `LineChart`; `CategoryBarChart` (shock shifts, carry, key rates).
+- **Problem:** on a linear 0–30y axis, six of the twelve tenors (1M–2Y) sat in the first 7% of the
+  width, so the front end, where curves move most, was unreadable. With 12 bars at 390px the
+  category labels touched ("10Y20Y30Y").
+- **Fix:** a square-root maturity scale (`xScale="sqrt"`) on all seven curve charts, labelled
+  "√ scale"; bar charts label every nth category when a label doesn't fit its band.
+
 ---
 
 ## Security / dependencies
@@ -181,3 +222,12 @@
 - **Gotcha:** npm 10's `npm audit fix` / `npm update` crash here (`Cannot read properties of null
   (reading 'edgesOut')`, an arborist peer-set bug). `npx npm@11 audit fix` works and writes the
   same lockfile v3 that npm 10's `npm ci` installs cleanly.
+
+### BUG-17 · zod 4.4.3 memory-exhaustion advisory — ✅ FIXED (2026-10-27)
+
+- **Where:** `web/package-lock.json` (zod is transitive, via the AI SDK the command panel uses).
+- **Problem:** GHSA-mrhx-c7xc-m3w5 (high): zod < 4.6.6 can exhaust memory validating oversized
+  constrained collections. Published after BUG-14's fix; the CI audit gate caught it on the next
+  push.
+- **Fix:** lockfile-only bump to zod 4.6.7 (`npx npm@11 audit fix --omit=dev`), verified with a
+  clean npm 10 `npm ci`, the full test suite and a production build.

@@ -35,7 +35,7 @@ export const TOOLS: Tool[] = [
     href: "/signal",
     nav: "Signal",
     title: "Inversion & Recession Signal",
-    description: "Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion episode, and where today sits (z-score, percentile).",
+    description: "Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion and the lead time to the recession that followed, and where today sits (z-score, percentile).",
     group: "Rates",
   },
   {
@@ -63,7 +63,7 @@ export const TOOLS: Tool[] = [
     href: "/stocks",
     nav: "Stocks",
     title: "Stocks",
-    description: "Daily price history and returns for any ticker, from Polygon.io.",
+    description: "Compare up to six tickers rebased to 100, with daily price history from Polygon.io.",
     group: "Markets & AI",
   },
   {

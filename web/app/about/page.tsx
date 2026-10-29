@@ -243,14 +243,20 @@ export default function AboutPage() {
       <Section id="signal" title="Recession signal" tool="/signal">
         <p>
           The curve is <strong>inverted</strong> when the 10-year yield is at or below the 3-month
-          yield (10y − 3m ≤ 0). An <strong>episode</strong> is a maximal run of consecutive inverted
-          days, with its length and deepest point recorded.
+          yield (10y − 3m ≤ 0). Daily data breaks one inversion into many short runs: the spread dips
+          below zero, recovers for a few days and dips again. Counting each run as a signal would turn
+          five inversions since 1990 into more than forty, so runs less than six months apart are
+          merged into one <strong>period</strong>, with its inverted days, number of runs and deepest
+          point recorded.
         </p>
         <p>
-          A recession <strong>follows</strong> an episode if an NBER-dated recession overlaps it or
-          starts within 24 months of its end. Measuring from the end rather than the start correctly
-          credits long inversions that run right up to a downturn. The NBER peak-to-trough dates since
-          1990 are maintained by hand, and the chart shades them behind every daily spread since then.
+          A recession <strong>follows</strong> a period if an NBER-dated recession overlaps it or
+          starts within 24 months of its end. Measuring from the end rather than the start credits
+          long inversions that run right up to a downturn; the <strong>lead</strong> is counted from
+          the first inverted day. A period whose 24 months haven&apos;t passed yet is reported as too
+          early to tell rather than as a miss, and recessions without two years of data before them
+          (1990) aren&apos;t scored. The NBER peak-to-trough dates are maintained by hand, and the chart
+          shades them behind every daily spread since 1990.
         </p>
       </Section>
 

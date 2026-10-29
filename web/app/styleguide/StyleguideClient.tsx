@@ -214,8 +214,16 @@ export function StyleguideClient() {
       <Section title="Charts">
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
-            <h3 className="mb-2 text-base">LineChart</h3>
-            <LineChart ariaLabel="Sample line chart" series={LINE_SERIES} xLabel="Maturity (years)" yLabel="Yield" yUnit="%" />
+            <h3 className="mb-2 text-base">LineChart · with exportTitle (CSV / PNG)</h3>
+            <LineChart
+              ariaLabel="Sample line chart"
+              series={LINE_SERIES}
+              xLabel="Maturity (years)"
+              xScale="sqrt"
+              yLabel="Yield (%)"
+              yUnit="%"
+              exportTitle="Sample line chart"
+            />
           </Card>
           <Card>
             <h3 className="mb-2 text-base">CategoryBarChart (diverging stack)</h3>

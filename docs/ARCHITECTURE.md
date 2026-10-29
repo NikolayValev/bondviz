@@ -88,6 +88,7 @@ web/
 │   ├── portfolio.ts          # multi-bond aggregation built on finance.ts
 │   ├── treasury.ts           # fetch + parse Treasury XML (fast-xml-parser)
 │   ├── polygon.ts            # fetch + parse Polygon aggregates
+│   ├── relativePerformance.ts # rebase closes to 100, window returns + late-start flags (Stocks)
 │   ├── spreadsCache.ts       # in-memory promise cache for the deep spread series
 │   ├── panelLayout.ts        # command-panel dashboard grid math (span/height clamp, persist)
 │   ├── chatStore.ts          # command-panel conversation index (create/rename/delete/evict)
@@ -99,6 +100,9 @@ web/
 │   ├── relativeValue.ts      # z-score / percentile of today's spread vs a trailing window
 │   ├── urlState.ts           # typed query-string codecs (num, oneOf, text, numSet, records)
 │   ├── paletteSearch.ts      # ⌘K palette ranking
+│   ├── exportCsv.ts          # CSV text (RFC 4180, formula-safe), series/category tables, file names
+│   ├── crosshair.ts          # chart readouts: nearest x, value on the drawn line, readout precision
+│   ├── snapshot.ts           # Home's market snapshot: latest KPIs, month change, curve a year ago
 │   └── format.ts             # iso(), money(), money0(), signedPct()
 ├── components/
 │   ├── Nav.tsx               # sticky top nav + menu below lg (links come from lib/tools.ts)
@@ -106,9 +110,11 @@ web/
 │   ├── useUrlState.ts        # page state ⇄ query string (useSyncExternalStore + debounced replaceState)
 │   ├── KeyRateRisk.tsx       # key-rate duration / DV01 bars (pricing + portfolio)
 │   ├── LazyMount.tsx         # mount heavy below-the-fold charts when they near the viewport
-│   ├── ui/                   # Card, Metric, Segmented, Skeleton, ScrollRegion, CopyLinkButton
+│   ├── ui/                   # Card, Metric, Segmented, Skeleton, ScrollRegion, CopyLinkButton,
+│   │                         # ExportButtons (CSV / PNG downloads)
 │   └── charts/               # LineChart, CategoryBarChart, Heatmap, SpreadHistoryChart,
-│                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver
+│                             # ScenarioChart, PriceYieldChart, CashflowChart, useResizeObserver,
+│                             # exportPng (SVG → standalone copy → canvas → PNG)
 ├── test/                     # fixtures (treasury-sample.xml) + smoke test
 ├── globals/config            # next.config.ts (serverExternalPackages: command-panel), vercel.json,
 │                             # tsconfig.json, eslint.config.mjs,
@@ -129,7 +135,7 @@ web/
 | `/signal` | `SignalClient` (+ `RelativeValuePanel`) | `signal`, `spreadsCache`, `relativeValue` | `/api/treasury/spreads` (1990→now) | SpreadHistoryChart, range bars |
 | `/portfolio` | `PortfolioClient` | `portfolio`, `finance` | none (book lives in the URL) | KeyRateRisk, ScenarioChart |
 | `/pca` | `PcaClient` | `pca`, `finance` | `/api/treasury/range` (1–5yr) | LineChart ×2 |
-| `/stocks` | `StocksClient` | `polygon` types | `/api/stocks/aggregates` | LineChart |
+| `/stocks` | `StocksClient` | `relativePerformance` | `/api/stocks/aggregates` (one call per ticker, debounced) | LineChart |
 | `/command-panel` | `CommandPanelClient` (browser-only mount) | registry in `command-panel/data.ts` → `treasury`, `finance`, `curve`, `carry`, `signal` | `/api/command-panel` (chat, needs `GITHUB_MODELS_TOKEN`) + `/api/command-panel/data` | LLM-proposed widgets (`@nikolayvalev/command-panel`; see `docs/DECISIONS-command-panel.md`) |
 | `/about` | `page.tsx` (static, server) | — (prose from lib docstrings) | none | none (formula blocks) |
 
@@ -168,7 +174,10 @@ Every page in this app was built the same way. Follow it and you'll match the co
    `URL_DEFAULTS` + `URL_SCHEMA` (codecs from `lib/urlState.ts`) and use
    `const [state, set, shareUrl] = useUrlState(URL_SCHEMA, URL_DEFAULTS)`. Only non-default
    values are written; invalid params fall back to defaults. Add `<CopyLinkButton getUrl={shareUrl} />`.
-8. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
+8. **Make it exportable.** Give each shared chart an `exportTitle` (it adds CSV / PNG buttons to
+   the legend row) and put `<ExportButtons title csv={() => ({ columns, rows })} />` by each data
+   table. Pass raw numbers (percent as percent, not decimals) and put units in the headers.
+9. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
 
 There are full worked examples of this exact flow in `docs/superpowers/specs/*` (design) and
 `docs/superpowers/plans/*` (step-by-step). The two most recent (`carry-rolldown`,
@@ -192,7 +201,10 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 - **Tokens, not hex** (aspirational — see known debt). Use `var(--accent)` etc. New code should
   not add raw hex; chart series colors are the current offender.
 - **Numbers are tabular.** Add `className="tabnum"` to any numeric display (monospace + `tnum`).
-- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`; spreads/changes use
+- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`, and the shared charts
+  (`LineChart`, `CategoryBarChart`, `SpreadHistoryChart`) are focusable: arrow keys move a
+  crosshair whose values are announced through a polite live region, and the pointer shows the
+  same readout (`useCrosshair` + `lib/crosshair.ts`). Spreads/changes use
   sign + text, not color alone; inputs have labels; inline links are underlined; wide tables go
   in a `ScrollRegion`. Baseline 2026-10-16: zero axe-core (WCAG 2.1 AA) violations on every route
   at 1280 and 390px. Keep it that way.
@@ -220,7 +232,7 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 ## Testing & tooling
 
-- **Vitest** (`npm test`), jsdom env, Testing Library for components. 39 test files, 242 tests.
+- **Vitest** (`npm test`), jsdom env, Testing Library for components. 48 test files, 323 tests (2026-10-28).
   Every `lib/*.ts` has a sibling `*.test.ts`; charts have render/smoke tests; API routes stub
   `fetch` with `vi.stubGlobal`.
 - **ESLint** via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`). Run with

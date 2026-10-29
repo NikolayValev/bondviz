@@ -10,6 +10,7 @@ import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { signedPct } from "@/lib/format";
 import { CurvePoint } from "@/lib/types";
 import { ScrollRegion } from "@/components/ui/ScrollRegion";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 
 const BENCHMARKS = ["2Y", "5Y", "10Y", "30Y"];
 
@@ -92,8 +93,10 @@ export function ShockScenario({
           <div className="eyebrow mb-2">Curve</div>
           <LineChart
             ariaLabel={`Today's yield curve and the curve after a ${sizeBps} bp ${meta?.label ?? kind} shock`}
+            exportTitle={`${sizeBps} bp ${meta?.label ?? kind} curve`}
             series={view.series}
             xLabel="Maturity (years)"
+            xScale="sqrt"
             yLabel="Yield (%)"
             yUnit="%"
             height={260}
@@ -103,6 +106,8 @@ export function ShockScenario({
           <div className="eyebrow mb-2">Shift by tenor</div>
           <CategoryBarChart
             ariaLabel={`Yield shift in basis points at each tenor for a ${sizeBps} bp ${meta?.label ?? kind} shock`}
+            exportTitle={`${sizeBps} bp ${meta?.label ?? kind} shift by tenor`}
+            categoryLabel="Tenor"
             categories={view.categories}
             series={view.bars}
             yUnit=" bp"
@@ -140,6 +145,14 @@ export function ShockScenario({
           </tbody>
         </table>
       </ScrollRegion>
+      <ExportButtons
+        className="mt-3 justify-end"
+        title={`${sizeBps} bp ${meta?.label ?? kind} benchmark reprices`}
+        csv={() => ({
+          columns: ["Bond", "Yield today (%)", "Shocked yield (%)", "Shift (bps)", "Price change (%)", "D + C estimate (%)"],
+          rows: view.impacts.map((b) => [b.label, b.yieldBefore, b.yieldAfter, b.shiftBps, b.pctChange * 100, b.approxPctChange * 100]),
+        })}
+      />
     </Card>
   );
 }

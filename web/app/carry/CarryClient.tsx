@@ -12,6 +12,7 @@ import { YieldRow } from "@/lib/types";
 import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
 import { ScrollRegion } from "@/components/ui/ScrollRegion";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 
 const HORIZONS = [
   { label: "1M", value: 1 / 12 },
@@ -97,6 +98,8 @@ export function CarryClient() {
         </div>
         <CategoryBarChart
           ariaLabel="Carry and roll-down per tenor, stacked, in basis points of horizon return"
+          exportTitle={`Carry vs roll-down ${horizonLabel}`}
+          categoryLabel="Tenor"
           yUnit=" bps"
           categories={cats}
           series={[
@@ -111,6 +114,8 @@ export function CarryClient() {
         <h2 className="mb-2 text-lg">Breakeven cushion · {horizonLabel}</h2>
         <CategoryBarChart
           ariaLabel="Breakeven yield sell-off per tenor, in basis points"
+          exportTitle={`Breakeven cushion ${horizonLabel}`}
+          categoryLabel="Tenor"
           yUnit=" bps"
           categories={cats}
           series={[{ id: "be", label: "Breakeven", color: "var(--warn)", values: view.points.map((p) => p.breakevenBps) }]}
@@ -121,7 +126,16 @@ export function CarryClient() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-lg">Detail</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg">Detail</h2>
+          <ExportButtons
+            title={`Carry and roll-down ${horizonLabel}`}
+            csv={() => ({
+              columns: ["Tenor", "Yield (%)", "Carry (bps)", "Roll (bps)", "Total (bps)", "Breakeven (bps)", "Return (%)"],
+              rows: view.points.map((p) => [p.label, p.yieldPct, p.carryBps, p.rollBps, p.totalBps, p.breakevenBps, p.totalPct]),
+            })}
+          />
+        </div>
         <ScrollRegion label="Carry and roll-down by tenor">
           <table className="w-full text-sm tabnum">
             <thead>

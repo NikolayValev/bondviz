@@ -14,6 +14,7 @@ import { useUrlState } from "@/components/useUrlState";
 import { oneOf, type Schema } from "@/lib/urlState";
 import { ShockScenario } from "./ShockScenario";
 import { LazyMount } from "@/components/LazyMount";
+import { nearestRow } from "@/lib/snapshot";
 import { Segmented } from "@/components/ui/Segmented";
 
 const COMPARE = [
@@ -36,18 +37,6 @@ const INTERPOLATIONS = [
   { label: "Monotone cubic", value: "pchip" as const },
   { label: "Linear", value: "linear" as const },
 ];
-
-function nearest(rows: YieldRow[], target: string): YieldRow | null {
-  if (rows.length === 0) return null;
-  let best = rows[0];
-  let bestDiff = Infinity;
-  const tt = new Date(target).getTime();
-  for (const r of rows) {
-    const diff = Math.abs(new Date(r.date).getTime() - tt);
-    if (diff < bestDiff) { bestDiff = diff; best = r; }
-  }
-  return best;
-}
 
 export function YieldCurveClient() {
   const [rows, setRows] = useState<YieldRow[] | null>(null);
@@ -85,7 +74,7 @@ export function YieldCurveClient() {
     for (const c of COMPARE) {
       const target = new Date(latest.date);
       target.setMonth(target.getMonth() - c.months);
-      const row = nearest(rows, iso(target));
+      const row = nearestRow(rows, iso(target));
       if (row) {
         const pts = rowToCurve(row).map((p) => [p.years, p.yield] as [number, number]);
         if (pts.length) curveSeries.push({ id: c.label, label: c.label, color: c.color, points: pts });
@@ -145,8 +134,10 @@ export function YieldCurveClient() {
         <h2 className="mb-2 text-lg">Latest curve · {view.latest.date}</h2>
         <LineChart
           ariaLabel="Latest Treasury yield curve by maturity"
+          exportTitle={`Treasury yield curve ${view.latest.date}`}
           series={[view.curveSeries[0]]}
           xLabel="Maturity (years)"
+          xScale="sqrt"
           yLabel="Yield (%)"
           yUnit="%"
         />
@@ -157,8 +148,10 @@ export function YieldCurveClient() {
         <h2 className="mb-2 text-lg">Curve shifts vs the past</h2>
         <LineChart
           ariaLabel="Latest yield curve compared with prior periods"
+          exportTitle="Curve shifts vs the past"
           series={view.curveSeries}
           xLabel="Maturity (years)"
+          xScale="sqrt"
           yLabel="Yield (%)"
           yUnit="%"
         />
@@ -187,7 +180,9 @@ export function YieldCurveClient() {
           <LineChart
             ariaLabel={`Bootstrapped zero and forward curves vs par, ${url.interp === "pchip" ? "monotone cubic" : "linear"} par interpolation`}
             series={bootstrapSeries}
+            exportTitle={`Zero and forward curve (${url.interp === "pchip" ? "monotone cubic" : "linear"})`}
             xLabel="Maturity (years)"
+            xScale="sqrt"
             yLabel="Rate (%)"
             yUnit="%"
           />
@@ -206,6 +201,7 @@ export function YieldCurveClient() {
         <LazyMount minHeight={320}>
           <LineChart
             ariaLabel="2s10s and 3m10y spreads over time"
+            exportTitle="Key spreads over time"
             series={view.spreadSeriesData}
             xType="time"
             xLabel="Date"
@@ -224,6 +220,7 @@ export function YieldCurveClient() {
         <LazyMount minHeight={300}>
           <Heatmap
             ariaLabel="Treasury yields by tenor over time"
+            exportTitle="Yield heatmap"
             dates={view.heatmap.dates}
             tenors={view.heatmap.tenors}
             values={view.heatmap.values}

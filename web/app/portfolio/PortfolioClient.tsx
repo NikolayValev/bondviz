@@ -11,6 +11,7 @@ import { CopyLinkButton } from "@/components/ui/CopyLinkButton";
 import { useUrlState } from "@/components/useUrlState";
 import { num, numSet, oneOf, records, text, type Schema } from "@/lib/urlState";
 import { money, money0, signedPct } from "@/lib/format";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 
 interface Position {
   label: string;
@@ -204,11 +205,20 @@ export function PortfolioClient() {
               <h2 className="text-lg">Portfolio stress test</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">Parallel shift applied to every holding — total value vs. approximation.</p>
             </div>
-            <Segmented
-              ariaLabel="Shift magnitudes in basis points" multi
-              options={MAGNITUDES.map((mm) => ({ label: `±${mm}`, value: mm }))}
-              value={mags} onChange={(v) => setMags(v as number[])}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Segmented
+                ariaLabel="Shift magnitudes in basis points" multi
+                options={MAGNITUDES.map((mm) => ({ label: `±${mm}`, value: mm }))}
+                value={mags} onChange={(v) => setMags(v as number[])}
+              />
+              <ExportButtons
+                title="Portfolio stress test"
+                csv={() => ({
+                  columns: ["Shift (bps)", "Portfolio value", "$ change", "% change", "D + C estimate (%)"],
+                  rows: rows.map((r) => [r.shiftBps, r.newPrice, r.dollarChange, r.pctChange * 100, r.approxPctChange * 100]),
+                })}
+              />
+            </div>
           </div>
           <div className="mt-6"><ScenarioChart rows={rows} basePrice={metrics.totalValue} /></div>
 

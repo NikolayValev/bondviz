@@ -39,6 +39,8 @@ export async function fetchAggregates(
   apiKey: string,
 ): Promise<StockBar[]> {
   const res = await fetch(aggregatesUrl(ticker, from, to, apiKey), { next: { revalidate: 3600 } });
+  // The free tier allows 5 calls a minute; comparing several tickers can hit it, so say so plainly.
+  if (res.status === 429) throw new Error("rate limited by Polygon (free tier: 5 calls a minute); try again shortly");
   if (!res.ok) throw new Error(`Polygon aggregates for ${ticker} returned ${res.status}`);
   return parseAggregates(await res.json());
 }

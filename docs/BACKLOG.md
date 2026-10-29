@@ -86,7 +86,13 @@
   - **FEAT-4c** — wire `PortfolioClient` (holdings array).
   - **FEAT-4d** — wire Carry / PCA / Stocks lookbacks & horizons.
 
-### FEAT-5 · CSV / PNG export for charts & tables — **M**
+### FEAT-5 · CSV / PNG export for charts & tables — **M** — ✅ DONE (`lib/exportCsv.ts`, `ExportButtons`, `charts/exportPng.ts`)
+
+> Shipped 2026-10-27. Every shared chart (`LineChart`, `CategoryBarChart`, `Heatmap`,
+> `SpreadHistoryChart`) takes `exportTitle`; the carry, inversion-episode, pricing / portfolio
+> scenario and shock benchmark tables have CSV buttons. The SVG→PNG step lives in
+> `components/charts/` rather than `lib/` because it needs the DOM. Not covered: the three
+> pricing-only charts (`ScenarioChart`, `PriceYieldChart`, `CashflowChart`), whose tables export.
 
 - **Goal:** an "Export" affordance on each Card to download the table as CSV and the chart as PNG.
 - **Files:** new `web/lib/exportCsv.ts` (+test), `web/lib/exportSvg.ts`; an `ExportButton` in
@@ -165,7 +171,11 @@
   - **FEAT-11a** — second token set under `[data-theme="light"]` in `globals.css`.
   - **FEAT-11b** — `ThemeToggle` in `Nav` + `localStorage` + no-FOUC inline script in `layout.tsx`.
 
-### FEAT-12 · Multi-ticker overlay on Stocks — **S/M**
+### FEAT-12 · Multi-ticker overlay on Stocks — **S/M** — ✅ DONE (`lib/relativePerformance.ts`, `StocksClient`)
+
+> Shipped 2026-10-27. Up to six tickers (one per series color) rebased to 100 with a return
+> ranking; late starters are flagged. Fetches are per ticker, cached per window, deduplicated in
+> flight and debounced while typing (Polygon's free tier is 5 calls a minute; a 429 now says so).
 
 - **Goal:** plot all entered tickers on one normalized (rebased-to-100) chart, not just the active one.
 - **Files:** `StocksClient`, `LineChart` (already multi-series).

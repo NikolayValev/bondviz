@@ -21,6 +21,22 @@ palette). Phase 4's QA is done too: zero axe violations on every route; Lighthou
 practices / SEO 100 and performance 95–99 (local production build). What's left needs you:
 production Lighthouse, the portfolio write-up, pinning the repo, and the ETL-branch decision.
 
+**2026-10-20:** dependency advisories cleared (Next 16.4.2; BUG-14) with an audit gate in CI; the
+command panel says upfront when the AI demo is off; MIT `LICENSE`; the forward-curve spike at 20Y
+fixed with monotone cubic par interpolation (BUG-15).
+
+**2026-10-27:** FEAT-5 (CSV / PNG export on every shared chart and the key tables) and FEAT-12
+(multi-ticker comparison on Stocks) done, plus clearer time-axis labels (BUG-16). The portfolio
+write-up is drafted in [PORTFOLIO-ENTRY.md](PORTFOLIO-ENTRY.md). Still needs you: production
+Lighthouse, repo description / website / pin, and the ETL-branch decision.
+
+**2026-10-28:** a fresh critical pass over every page. The recession signal is scored by inversion
+period with lead times (BUG-18; it was counting one-day flickers, 42 "episodes" for five
+inversions). Every shared chart has a hover / touch / keyboard readout. Home leads with a live
+chart and month moves. Curve charts use a √ maturity axis, and bar labels no longer collide on
+phones (BUG-20). Spread-history years were a year early east of UTC (BUG-19). Zod advisory
+patched (BUG-17). README screenshots refreshed.
+
 ## Where things stood (audit, 2026-10-14)
 
 | Check | Result |
@@ -206,6 +222,10 @@ better story), FEAT-11 (light mode), auth (no user value for a public demo).
 | FEAT-13 | Spread z-scores / percentiles on /signal | M | 3 | ✅ done |
 | FEAT-7 | ⌘K command palette | S/M | 3 | ✅ done |
 | — | Accessibility (axe) + Lighthouse pass | S | 4 | ✅ done |
-| — | Lighthouse on prod, portfolio write-up, pin repo | S | 4 | needs you |
+| BUG-14 / BUG-15 / BUG-16 | Dependency advisories, forward-curve spike, time-axis labels | S | — | ✅ done |
+| FEAT-5 | CSV / PNG export for charts and tables | M | 3 | ✅ done |
+| FEAT-12 | Multi-ticker overlay on Stocks | S/M | 3 | ✅ done |
+| — | Portfolio write-up | S | 4 | ✅ drafted ([PORTFOLIO-ENTRY.md](PORTFOLIO-ENTRY.md)) |
+| — | Lighthouse on prod, repo description / website, pin repo | S | 4 | needs you |
 
 Done already (no action): FEAT-2, FEAT-3, FEAT-9, BUG-7.

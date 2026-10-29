@@ -123,8 +123,10 @@ export function PcaClient() {
             <h2 className="mb-2 text-lg">Factor loadings</h2>
             <LineChart
               ariaLabel="PCA factor loadings by maturity"
+              exportTitle="PCA factor loadings"
               series={charts.loadingSeries}
               xLabel="Maturity (years)"
+              xScale="sqrt"
               yLabel="Loading"
               zeroBaseline
             />
@@ -138,6 +140,7 @@ export function PcaClient() {
             <h2 className="mb-2 text-lg">Factor scores over time</h2>
             <LineChart
               ariaLabel="PCA factor scores over time"
+              exportTitle="PCA factor scores"
               series={charts.scoreSeries}
               xType="time"
               xLabel="Date"

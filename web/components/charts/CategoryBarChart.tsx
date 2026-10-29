@@ -1,7 +1,11 @@
 "use client";
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import { scaleBand, scaleLinear } from "d3-scale";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { categoryTable } from "@/lib/exportCsv";
+import { nearestIndex, readoutDecimals } from "@/lib/crosshair";
+import { useCrosshair } from "@/components/charts/useCrosshair";
 
 export interface BarSeries {
   id: string;
@@ -19,6 +23,10 @@ export interface CategoryBarChartProps {
   formatY?: (v: number) => string;
   width?: number;
   height?: number;
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
+  /** Header of the category column in the CSV. */
+  categoryLabel?: string;
 }
 
 const M = { top: 12, right: 16, bottom: 32, left: 52 };
@@ -27,6 +35,7 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = props.width ?? measured;
   const height = props.height ?? 280;
+  const hintId = useId();
 
   const c = useMemo(() => {
     if (width === 0 || props.categories.length === 0) return null;
@@ -86,19 +95,73 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
       }
     });
 
-    return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw };
+    const centers = props.categories.map((cat) => (x(cat) ?? 0) + bw / 2);
+    // Label every nth category when the bands are narrower than a label (11px mono ≈ 6.6px a
+    // character, plus a gap), so "10Y20Y30Y" doesn't run together on a phone.
+    const longest = Math.max(...props.categories.map((cat) => cat.length));
+    const labelEvery = Math.max(1, Math.ceil((longest * 6.6 + 8) / x.step()));
+    return { iw, ih, x, y, rects, yTicks: y.ticks(5), bw, centers, span: hi - lo, labelEvery };
   }, [props.categories, props.series, width, height]);
 
   const fmtY = props.formatY ?? ((v: number) => `${Math.round(v)}${props.yUnit ?? ""}`);
+
+  const cross = useCrosshair(props.categories.length);
+  const readout = useMemo(() => {
+    if (!c || cross.index === null) return null;
+    const j = cross.index;
+    const unit = props.yUnit ?? "";
+    const decimals = /^\s*bps?$/.test(unit) ? 0 : readoutDecimals(c.span);
+    const fmt = props.formatY ?? ((v: number) => `${v.toFixed(decimals)}${unit}`);
+    const rows = props.series
+      .map((s) => ({ id: s.id, label: s.label, color: s.color, value: s.values[j] }))
+      .filter((r): r is typeof r & { value: number } => r.value !== null && r.value !== undefined)
+      .map((r) => ({ ...r, text: fmt(r.value) }));
+    const total = rows.length > 1 ? fmt(rows.reduce((a, r) => a + r.value, 0)) : null;
+    const title = props.categories[j];
+    return {
+      j,
+      title,
+      rows,
+      total,
+      text: `${title}: ${rows.map((r) => `${r.label} ${r.text}`).join(", ")}${total ? `, total ${total}` : ""}`,
+    };
+  }, [c, cross.index, props.categories, props.series, props.formatY, props.yUnit]);
 
   return (
     <div className="w-full">
       {/* The plot box reserves its height before the width is measured, so the legend below
           doesn't jump down when the SVG appears (layout shift). */}
-      <div ref={ref} style={{ minHeight: height }}>
+      <div ref={ref} className="relative" style={{ minHeight: height }}>
         {c && (
-          <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
+          <svg
+            width={width}
+            height={height}
+            role="img"
+            aria-label={props.ariaLabel}
+            aria-describedby={hintId}
+            tabIndex={0}
+            className="overflow-visible touch-pan-y"
+            onPointerMove={(e) => {
+              const left = e.currentTarget.getBoundingClientRect().left + M.left;
+              cross.show(nearestIndex(c.centers, e.clientX - left), "pointer");
+            }}
+            onPointerLeave={() => cross.via === "pointer" && cross.hide()}
+            onKeyDown={cross.onKeyDown}
+            onBlur={() => cross.via === "key" && cross.hide()}
+          >
             <g transform={`translate(${M.left},${M.top})`}>
+              {readout && (
+                <rect
+                  className="hover-band"
+                  x={c.centers[readout.j] - c.x.step() / 2}
+                  y={0}
+                  width={c.x.step()}
+                  height={c.ih}
+                  fill="var(--text)"
+                  opacity={0.06}
+                  pointerEvents="none"
+                />
+              )}
               {c.yTicks.map((t) => (
                 <g key={`y${t}`} transform={`translate(0,${c.y(t)})`}>
                   <line x1={0} x2={c.iw} stroke="var(--grid)" />
@@ -111,7 +174,7 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
               {c.rects.map((r) => (
                 <rect key={r.key} className="bar" x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} rx={1.5} />
               ))}
-              {props.categories.map((cat) => (
+              {props.categories.map((cat, j) => j % c.labelEvery === 0 && (
                 <text
                   key={`x${cat}`}
                   x={(c.x(cat) ?? 0) + c.bw / 2}
@@ -127,15 +190,68 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
             </g>
           </svg>
         )}
+        {c && readout && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 min-w-32 rounded-md border border-[var(--panel-border-strong)] bg-[var(--panel-2)] px-2.5 py-2 text-xs shadow-lg"
+            style={{
+              top: M.top + 4,
+              left: M.left + c.centers[readout.j],
+              transform:
+                c.centers[readout.j] > c.iw / 2
+                  ? `translateX(calc(-100% - ${c.x.step() / 2 + 4}px))`
+                  : `translateX(${c.x.step() / 2 + 4}px)`,
+            }}
+          >
+            <div className="tabnum mb-1 text-[var(--text)]">{readout.title}</div>
+            {readout.rows.map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-4 text-[var(--muted)]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: r.color }} />
+                  {r.label}
+                </span>
+                <span className="tabnum text-[var(--text)]">{r.text}</span>
+              </div>
+            ))}
+            {readout.total && (
+              <div className="mt-1 flex justify-between gap-4 border-t border-[var(--panel-border)] pt-1 text-[var(--muted)]">
+                Total <span className="tabnum text-[var(--text)]">{readout.total}</span>
+              </div>
+            )}
+          </div>
+        )}
+        <span id={hintId} className="sr-only">
+          Focus the chart and use the left and right arrow keys to read each bar.
+        </span>
+        <div className="sr-only" aria-live="polite">
+          {readout && cross.via === "key" ? readout.text : ""}
+        </div>
       </div>
-      {props.series.length > 1 && (
-        <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
-          {props.series.map((s) => (
-            <span key={s.id} className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
-              {s.label}
-            </span>
-          ))}
+      {(props.series.length > 1 || props.exportTitle) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+          {props.series.length > 1 &&
+            props.series.map((s) => (
+              <span key={s.id} className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-3 rounded-sm" style={{ background: s.color }} />
+                {s.label}
+              </span>
+            ))}
+          {props.exportTitle && (
+            <ExportButtons
+              className="ml-auto"
+              title={props.exportTitle}
+              csv={() => {
+                const unit = props.yUnit?.trim();
+                return categoryTable(
+                  props.categoryLabel ?? "Category",
+                  props.categories,
+                  props.series.map((s) => ({ label: unit ? `${s.label} (${unit})` : s.label, values: s.values })),
+                );
+              }}
+              svg={() => ref.current?.querySelector("svg")}
+              legend={props.series.length > 1 ? props.series : []}
+            />
+          )}
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 
 [![CI](https://github.com/NikolayValev/bondviz/actions/workflows/ci.yml/badge.svg)](https://github.com/NikolayValev/bondviz/actions/workflows/ci.yml)
 
-![Yield Curve Explorer: the live Treasury curve against 1, 3, 6 and 12 months ago](docs/img/yield-curve.png)
+![Yield Curve Explorer: the live Treasury curve against 1, 3, 6 and 12 months ago, with the hover readout at 2Y](docs/img/yield-curve.png)
 
 ## What's inside
 
@@ -18,24 +18,25 @@ for a chart in plain English. Hand-rolled D3 charts on unit-tested bond math.
 | --- | --- |
 | [**Yield Curve Explorer**](https://bondviz.nikolayvalev.com/yield-curve) | The live par curve, a **curve-shock builder** (parallel, bull/bear steepeners and flatteners, twist, butterfly) that reprices benchmark bonds, shifts versus the past year, 2s10s / 3m10y history, a date × tenor heatmap, and a bootstrapped zero and 6-month forward curve. |
 | [**Carry & Roll-Down**](https://bondviz.nikolayvalev.com/carry) | Horizon carry, roll-down and the breakeven sell-off cushion for every tenor. |
-| [**Inversion & Recession Signal**](https://bondviz.nikolayvalev.com/signal) | Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion episode, and where today sits in its own history (z-score, percentile). |
+| [**Inversion & Recession Signal**](https://bondviz.nikolayvalev.com/signal) | Every daily 10y–3m and 2s10s spread since 1990 against NBER recessions, each inversion period and its lead time to the recession that followed, and where today sits in its own history (z-score, percentile). |
 | [**Yield Curve PCA**](https://bondviz.nikolayvalev.com/pca) | Level, slope and curvature factors from a from-scratch Jacobi eigensolver. |
 | [**Bond Pricing & Risk Lab**](https://bondviz.nikolayvalev.com/pricing) | PV, duration, convexity, DV01, **key-rate durations**, yield-from-price, rate-shock scenarios and holding-period returns. |
 | [**Portfolio Analyzer**](https://bondviz.nikolayvalev.com/portfolio) | Value-weighted risk and key-rate DV01s for a book of bonds, stressed with parallel shifts. |
-| [**Stocks**](https://bondviz.nikolayvalev.com/stocks) | Daily price history from Polygon.io (the key stays server-side). |
+| [**Stocks**](https://bondviz.nikolayvalev.com/stocks) | Up to six tickers on one chart rebased to 100 and ranked by return, plus daily bars, from Polygon.io (the key stays server-side). |
 | [**Command Panel**](https://bondviz.nikolayvalev.com/command-panel) | Ask for a chart in plain English; an LLM proposes a widget that can only read from a fixed registry of server-side metrics. |
 
 | | |
 | --- | --- |
 | ![Curve shock builder: a 50bp steepening twist and its effect on 2Y–30Y benchmark bonds](docs/img/shock.png) | ![Key-rate DV01s of a 2Y/5Y/10Y portfolio](docs/img/krd.png) |
-| ![Bond Pricing & Risk Lab](docs/img/pricing.png) | ![Inversion & Recession Signal: today vs its own history](docs/img/signal.png) |
-| ![Yield Curve PCA](docs/img/pca.png) | ![Home with the live market snapshot](docs/img/home.png) |
+| ![Bond Pricing & Risk Lab](docs/img/pricing.png) | ![Inversion & Recession Signal: every daily spread since 1990 and the five inversion periods with their lead times](docs/img/signal.png) |
+| ![Yield Curve PCA](docs/img/pca.png) | ![Home: the live snapshot with month moves and the curve against a year ago](docs/img/home.png) |
 
 **Every view is a link.** Inputs live in the URL, so a configured bond, portfolio or scenario can
 be shared directly, for example a
 [30-year 3% bond](https://bondviz.nikolayvalev.com/pricing?coupon=3&years=30&yield=4.5) or a
 [100bp bear steepener](https://bondviz.nikolayvalev.com/yield-curve?shock=bear-steepener&bp=100).
-Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools.
+Press <kbd>⌘K</kbd> / <kbd>Ctrl-K</kbd> anywhere to jump between tools. Charts and data tables
+download as **PNG or CSV**.
 
 Every formula, and every convention behind it, is written up on the
 **[methodology page](https://bondviz.nikolayvalev.com/about)**. For example, pricing uses
@@ -62,8 +63,9 @@ flowchart LR
   design tokens shown on [`/styleguide`](https://bondviz.nikolayvalev.com/styleguide).
 - **CI** runs tests, ESLint, `tsc` and a production build for the web app, and `pytest` for the
   Python reference, on every push.
-- **Accessible and fast:** zero axe-core (WCAG 2.1 AA) violations across every route at desktop
-  and mobile widths; Lighthouse accessibility, best practices and SEO are 100, and performance is
+- **Accessible and fast:** hover, touch or arrow-key any chart to read its values (announced to
+  screen readers); zero axe-core (WCAG 2.1 AA) violations across every route at desktop and
+  mobile widths; Lighthouse accessibility, best practices and SEO are 100, and performance is
   95–99 on the tools with no layout shift (local production build, Lighthouse mobile defaults).
 - **Fully keyless by default.** Treasury data needs no API key. Polygon and GitHub Models keys are
   optional and only enable the Stocks and Command pages.

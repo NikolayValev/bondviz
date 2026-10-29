@@ -2,6 +2,8 @@
 import { memo, useId, useMemo } from "react";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import { HEATMAP_STOPS as STOPS } from "@/lib/chartColors";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { categoryTable } from "@/lib/exportCsv";
 
 export function colorRamp(t: number): string {
   const tc = Math.max(0, Math.min(1, Number.isFinite(t) ? t : 0));
@@ -24,6 +26,8 @@ export interface HeatmapProps {
   width?: number;
   height?: number;
   unit?: string;                 // appended to the legend's min/max labels
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
 }
 
 // Left margin holds the date axis; bottom holds tenor labels plus the color legend.
@@ -78,70 +82,89 @@ export const Heatmap = memo(function Heatmap(props: HeatmapProps) {
   }, [props.dates, props.tenors, props.values, width, height]);
 
   return (
-    <div ref={ref} className="w-full" style={{ minHeight: height }}>
-      {content && (
-        <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
-          <g transform={`translate(${M.left},${M.top})`}>
-            {props.values.map((row, di) =>
-              row.map((v, ti) => (
-                <rect
-                  key={`${di}-${ti}`}
-                  className="heatmap-cell"
-                  x={ti * content.cellW}
-                  y={di * content.cellH}
-                  width={content.cellW + 0.5}
-                  height={content.cellH + 0.5}
-                  fill={v === null || !Number.isFinite(v) ? "var(--grid)" : colorRamp((v - content.min) / content.span)}
-                />
-              )),
-            )}
-            {props.tenors.map((label, ti) => (
-              <text
-                key={label}
-                x={ti * content.cellW + content.cellW / 2}
-                y={content.ih + 18}
-                textAnchor="middle"
-                fontSize={11}
-                fill="var(--muted)"
-                className="tabnum"
-              >
-                {label}
-              </text>
-            ))}
-            {content.dateTicks.map((di) => (
-              <text
-                key={`d${di}`}
-                x={-8}
-                y={di * content.cellH + content.cellH / 2}
-                dy="0.32em"
-                textAnchor="end"
-                fontSize={11}
-                fill="var(--muted)"
-                className="tabnum heatmap-date"
-              >
-                {fmtDate(props.dates[di])}
-              </text>
-            ))}
-            {content.hasValues && (
-              <g className="heatmap-legend" transform={`translate(${Math.max(0, content.iw - LEGEND_W)},${content.ih + 32})`}>
-                <defs>
-                  <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
-                    {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-                      <stop key={t} offset={t} stopColor={colorRamp(t)} />
-                    ))}
-                  </linearGradient>
-                </defs>
-                <rect width={Math.min(LEGEND_W, content.iw)} height={8} rx={2} fill={`url(#${gradientId})`} />
-                <text y={22} fontSize={11} fill="var(--muted)" className="tabnum">
-                  {`${content.min.toFixed(2)}${props.unit ?? ""}`}
+    <div className="w-full">
+      <div ref={ref} style={{ minHeight: height }}>
+        {content && (
+          <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
+            <g transform={`translate(${M.left},${M.top})`}>
+              {props.values.map((row, di) =>
+                row.map((v, ti) => (
+                  <rect
+                    key={`${di}-${ti}`}
+                    className="heatmap-cell"
+                    x={ti * content.cellW}
+                    y={di * content.cellH}
+                    width={content.cellW + 0.5}
+                    height={content.cellH + 0.5}
+                    fill={v === null || !Number.isFinite(v) ? "var(--grid)" : colorRamp((v - content.min) / content.span)}
+                  />
+                )),
+              )}
+              {props.tenors.map((label, ti) => (
+                <text
+                  key={label}
+                  x={ti * content.cellW + content.cellW / 2}
+                  y={content.ih + 18}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill="var(--muted)"
+                  className="tabnum"
+                >
+                  {label}
                 </text>
-                <text x={Math.min(LEGEND_W, content.iw)} y={22} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
-                  {`${content.max.toFixed(2)}${props.unit ?? ""}`}
+              ))}
+              {content.dateTicks.map((di) => (
+                <text
+                  key={`d${di}`}
+                  x={-8}
+                  y={di * content.cellH + content.cellH / 2}
+                  dy="0.32em"
+                  textAnchor="end"
+                  fontSize={11}
+                  fill="var(--muted)"
+                  className="tabnum heatmap-date"
+                >
+                  {fmtDate(props.dates[di])}
                 </text>
-              </g>
-            )}
-          </g>
-        </svg>
+              ))}
+              {content.hasValues && (
+                <g className="heatmap-legend" transform={`translate(${Math.max(0, content.iw - LEGEND_W)},${content.ih + 32})`}>
+                  <defs>
+                    <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+                      {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+                        <stop key={t} offset={t} stopColor={colorRamp(t)} />
+                      ))}
+                    </linearGradient>
+                  </defs>
+                  <rect width={Math.min(LEGEND_W, content.iw)} height={8} rx={2} fill={`url(#${gradientId})`} />
+                  <text y={22} fontSize={11} fill="var(--muted)" className="tabnum">
+                    {`${content.min.toFixed(2)}${props.unit ?? ""}`}
+                  </text>
+                  <text x={Math.min(LEGEND_W, content.iw)} y={22} textAnchor="end" fontSize={11} fill="var(--muted)" className="tabnum">
+                    {`${content.max.toFixed(2)}${props.unit ?? ""}`}
+                  </text>
+                </g>
+              )}
+            </g>
+          </svg>
+        )}
+      </div>
+      {props.exportTitle && (
+        <ExportButtons
+          className="mt-2 justify-end"
+          title={props.exportTitle}
+          csv={() =>
+            categoryTable(
+              "Date",
+              props.dates,
+              props.tenors.map((t, ti) => ({
+                label: props.unit ? `${t} (${props.unit})` : t,
+                values: props.values.map((row) => row[ti] ?? null),
+              })),
+            )
+          }
+          svg={() => ref.current?.querySelector("svg")}
+        />
       )}
     </div>
   );
