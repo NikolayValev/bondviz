@@ -6,7 +6,8 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { LineChart, Series } from "@/components/charts/LineChart";
 import { StockBar } from "@/lib/types";
-import { iso, money, money0, signedPct } from "@/lib/format";
+import { money, money0, signedPct } from "@/lib/format";
+import { localIsoDate, shiftMonths } from "@/lib/dates";
 import { SERIES } from "@/lib/chartColors";
 import { useUrlState } from "@/components/useUrlState";
 import { oneOf, text, type Schema } from "@/lib/urlState";
@@ -61,16 +62,20 @@ export function StocksClient() {
   const active = url.active || null;
   const setActive = (v: string) => setUrl({ active: v });
   const [cache, setCache] = useState<Record<string, CacheEntry>>({});
+  // Bumped by "Retry" to re-run the fetch effect for tickers that failed (e.g. rate limited).
+  const [attempt, setAttempt] = useState(0);
+  const retryFailed = () => {
+    setCache((prev) => Object.fromEntries(Object.entries(prev).filter(([, e]) => !e.error)));
+    setAttempt((n) => n + 1);
+  };
 
   const tickers = useMemo(() => parseTickers(tickersInput), [tickersInput]);
   const activeTicker = active && tickers.includes(active) ? active : tickers[0] ?? null;
 
   // Recomputed only when lookback changes, so the fetch effect has stable deps.
   const { from, to } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setMonth(start.getMonth() - lookback);
-    return { from: iso(start), to: iso(end) };
+    const today = localIsoDate();
+    return { from: shiftMonths(today, -lookback), to: today };
   }, [lookback]);
 
   // Every compared ticker is fetched (plus the active one, which may sit past the cap).
@@ -93,7 +98,8 @@ export function StocksClient() {
   useEffect(() => {
     const missing = wanted.filter((t) => {
       const key = cacheKeyOf(t, from, to);
-      return !cacheRef.current[key] && !inFlight.current.has(key);
+      // A failed load isn't final: it's tried again whenever the list, the window or "Retry" changes.
+      return (!cacheRef.current[key] || cacheRef.current[key].error) && !inFlight.current.has(key);
     });
     if (missing.length === 0) return;
     // Wait for typing to pause so partial symbols ("MS", "MSF") aren't fetched against Polygon's
@@ -122,7 +128,7 @@ export function StocksClient() {
       settled.current ? 500 : 0,
     );
     return () => window.clearTimeout(id);
-  }, [wanted, from, to]);
+  }, [wanted, from, to, attempt]);
 
   const entry = activeTicker ? cache[cacheKeyOf(activeTicker, from, to)] : undefined;
 
@@ -266,7 +272,14 @@ export function StocksClient() {
                 <p>* Starts later than the others (first trade or first data inside the window), indexed from its own first close.</p>
               )}
               {comparison.empty.length > 0 && <p>No data: {comparison.empty.join(", ")} (check the symbol).</p>}
-              {comparison.failed.length > 0 && <p>Couldn&apos;t load: {comparison.failed.join("; ")}.</p>}
+              {comparison.failed.length > 0 && (
+                <p>
+                  Couldn&apos;t load: {comparison.failed.join("; ")}.{" "}
+                  <button type="button" onClick={retryFailed} className="text-[var(--accent)] underline underline-offset-4">
+                    Retry
+                  </button>
+                </p>
+              )}
               {tickers.length > MAX_COMPARE && <p>Comparing the first {MAX_COMPARE} tickers; pick any ticker above for its detail.</p>}
             </div>
           )}
@@ -293,7 +306,10 @@ export function StocksClient() {
 
           {entry && entry.configured && entry.error && (
             <p className="text-[var(--muted)]">
-              Couldn&apos;t load {activeTicker}: {entry.error}
+              Couldn&apos;t load {activeTicker}: {entry.error}.{" "}
+              <button type="button" onClick={retryFailed} className="text-[var(--accent)] underline underline-offset-4">
+                Retry
+              </button>
             </p>
           )}
 

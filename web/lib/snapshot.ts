@@ -1,5 +1,6 @@
 import { computeCurveKpis, rowToCurve } from "@/lib/finance";
 import type { CurvePoint, Kpis, YieldRow } from "@/lib/types";
+import { shiftMonths } from "@/lib/dates";
 
 // The home page's market snapshot: the latest curve and KPIs, their change over a month, and
 // the curve a year earlier for comparison.
@@ -19,13 +20,6 @@ export function nearestRow<T extends { date: string }>(rows: T[], targetIso: str
     }
   }
   return best;
-}
-
-/** An ISO date moved by whole calendar months, in UTC (Mar 31 − 1 month → Mar 3, as Date does). */
-export function shiftMonths(iso: string, months: number): string {
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return d.toISOString().slice(0, 10);
 }
 
 /** A row near the target date, or null if the nearest one is more than `toleranceDays` away

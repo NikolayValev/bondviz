@@ -20,14 +20,13 @@ import { oneOf, type Schema } from "@/lib/urlState";
 import { RelativeValuePanel, RV_WINDOWS, type RvWindow } from "./RelativeValuePanel";
 import { ScrollRegion } from "@/components/ui/ScrollRegion";
 import { ExportButtons } from "@/components/ui/ExportButtons";
+import { monthYear } from "@/lib/dates";
 
 const URL_DEFAULTS = { window: "10Y" as RvWindow };
 const URL_SCHEMA: Schema<typeof URL_DEFAULTS> = { window: oneOf(RV_WINDOWS.map((w) => w.label)) };
 
 const bps = (pp: number | null) => (pp === null ? "—" : `${pp >= 0 ? "+" : ""}${(pp * 100).toFixed(0)} bps`);
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const monthYear = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
 
 // The 2020 recession was the pandemic shock: the 2019 inversion counts as a hit by the rule, but
 // few read it as having forecast that.
@@ -191,8 +190,8 @@ export function SignalClient() {
         <div className="mt-3 space-y-1 text-xs text-[var(--faint)]">
           <p>
             A period is a stretch of days with 10y–3m ≤ 0; runs less than six months apart count as one
-            period. A recession follows a period if it overlaps it or starts within {SIGNAL_WINDOW_MONTHS} months
-            after it ends; the lead is counted from the first inverted day. The 1990 recession is left out
+            period. A recession follows a period if it starts after the first inverted day and no later than{" "}
+            {SIGNAL_WINDOW_MONTHS} months after the last; the lead is counted from the first inverted day. The 1990 recession is left out
             because the data starts six months before it.
           </p>
           {view.periods.some((p) => p.outcome.kind === "recession" && p.outcome.recessionStart === PANDEMIC_RECESSION) && (

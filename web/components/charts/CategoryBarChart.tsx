@@ -6,6 +6,7 @@ import { ExportButtons } from "@/components/ui/ExportButtons";
 import { categoryTable } from "@/lib/exportCsv";
 import { nearestIndex, readoutDecimals } from "@/lib/crosshair";
 import { useCrosshair } from "@/components/charts/useCrosshair";
+import { ChartReadout } from "@/components/charts/ChartReadout";
 
 export interface BarSeries {
   id: string;
@@ -105,7 +106,7 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
 
   const fmtY = props.formatY ?? ((v: number) => `${Math.round(v)}${props.yUnit ?? ""}`);
 
-  const cross = useCrosshair(props.categories.length);
+  const cross = useCrosshair(props.categories);
   const readout = useMemo(() => {
     if (!c || cross.index === null) return null;
     const j = cross.index;
@@ -139,15 +140,8 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
             role="img"
             aria-label={props.ariaLabel}
             aria-describedby={hintId}
-            tabIndex={0}
             className="overflow-visible touch-pan-y"
-            onPointerMove={(e) => {
-              const left = e.currentTarget.getBoundingClientRect().left + M.left;
-              cross.show(nearestIndex(c.centers, e.clientX - left), "pointer");
-            }}
-            onPointerLeave={() => cross.via === "pointer" && cross.hide()}
-            onKeyDown={cross.onKeyDown}
-            onBlur={() => cross.via === "key" && cross.hide()}
+            {...cross.svgProps(M.left, (px) => nearestIndex(c.centers, px))}
           >
             <g transform={`translate(${M.left},${M.top})`}>
               {readout && (
@@ -190,42 +184,28 @@ export const CategoryBarChart = memo(function CategoryBarChart(props: CategoryBa
             </g>
           </svg>
         )}
-        {c && readout && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute z-10 min-w-32 rounded-md border border-[var(--panel-border-strong)] bg-[var(--panel-2)] px-2.5 py-2 text-xs shadow-lg"
-            style={{
-              top: M.top + 4,
-              left: M.left + c.centers[readout.j],
-              transform:
-                c.centers[readout.j] > c.iw / 2
-                  ? `translateX(calc(-100% - ${c.x.step() / 2 + 4}px))`
-                  : `translateX(${c.x.step() / 2 + 4}px)`,
-            }}
-          >
-            <div className="tabnum mb-1 text-[var(--text)]">{readout.title}</div>
-            {readout.rows.map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-4 text-[var(--muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: r.color }} />
-                  {r.label}
-                </span>
-                <span className="tabnum text-[var(--text)]">{r.text}</span>
-              </div>
-            ))}
-            {readout.total && (
-              <div className="mt-1 flex justify-between gap-4 border-t border-[var(--panel-border)] pt-1 text-[var(--muted)]">
-                Total <span className="tabnum text-[var(--text)]">{readout.total}</span>
-              </div>
-            )}
-          </div>
-        )}
-        <span id={hintId} className="sr-only">
-          Focus the chart and use the left and right arrow keys to read each bar.
-        </span>
-        <div className="sr-only" aria-live="polite">
-          {readout && cross.via === "key" ? readout.text : ""}
-        </div>
+        <ChartReadout
+          hintId={hintId}
+          hint="Focus the chart and use the left and right arrow keys to read each bar."
+          box={
+            c && readout
+              ? {
+                  x: M.left + c.centers[readout.j],
+                  top: M.top + 4,
+                  flip: c.centers[readout.j] > c.iw / 2,
+                  offset: c.x.step() / 2 + 4,
+                  title: readout.title,
+                  rows: readout.rows,
+                  footer: readout.total ? (
+                    <div className="mt-1 flex justify-between gap-4 border-t border-[var(--panel-border)] pt-1 text-[var(--muted)]">
+                      Total <span className="tabnum text-[var(--text)]">{readout.total}</span>
+                    </div>
+                  ) : null,
+                }
+              : null
+          }
+          announce={readout && cross.via === "key" ? readout.text : null}
+        />
       </div>
       {(props.series.length > 1 || props.exportTitle) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">

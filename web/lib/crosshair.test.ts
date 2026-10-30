@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nearestIndex, readoutDecimals, valueAt } from "@/lib/crosshair";
+import { closestIndex, nearestIndex, readoutDecimals, valueAt } from "@/lib/crosshair";
 
 describe("nearestIndex", () => {
   const xs = [0.25, 1, 2, 5, 10, 30];
@@ -14,6 +14,13 @@ describe("nearestIndex", () => {
     expect(nearestIndex(xs, 1.5)).toBe(1);
     expect(nearestIndex([7], 3)).toBe(0);
     expect(nearestIndex([], 3)).toBe(-1);
+  });
+});
+
+describe("closestIndex", () => {
+  it("finds the closest value in any order", () => {
+    expect(closestIndex([30, 10, 20], 12)).toBe(1);
+    expect(closestIndex([], 1)).toBe(-1);
   });
 });
 

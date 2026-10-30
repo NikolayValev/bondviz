@@ -1,9 +1,11 @@
 "use client";
-import { memo, useId, useMemo } from "react";
+import { memo, useId, useMemo, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import { HEATMAP_STOPS as STOPS } from "@/lib/chartColors";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { categoryTable } from "@/lib/exportCsv";
+import { ChartReadout } from "@/components/charts/ChartReadout";
+import { dayLabel } from "@/lib/dates";
 
 export function colorRamp(t: number): string {
   const tc = Math.max(0, Math.min(1, Number.isFinite(t) ? t : 0));
@@ -57,6 +59,7 @@ export const Heatmap = memo(function Heatmap(props: HeatmapProps) {
   const width = props.width ?? measured;
   const height = props.height ?? 300;
   const gradientId = useId();
+  const hintId = useId();
 
   const content = useMemo(() => {
     if (width === 0 || props.dates.length === 0 || props.tenors.length === 0) return null;
@@ -81,24 +84,114 @@ export const Heatmap = memo(function Heatmap(props: HeatmapProps) {
     return { iw, ih, cellW, cellH, min, max, span, dateTicks, hasValues };
   }, [props.dates, props.tenors, props.values, width, height]);
 
+  // The cells are built once per layout: the readout re-renders on every pointer move, and a
+  // year of daily rows is ~3,000 rects.
+  const cells = useMemo(
+    () =>
+      content &&
+      props.values.map((row, di) =>
+        row.map((v, ti) => (
+          <rect
+            key={`${di}-${ti}`}
+            className="heatmap-cell"
+            x={ti * content.cellW}
+            y={di * content.cellH}
+            width={content.cellW + 0.5}
+            height={content.cellH + 0.5}
+            fill={v === null || !Number.isFinite(v) ? "var(--grid)" : colorRamp((v - content.min) / content.span)}
+          />
+        )),
+      ),
+    [content, props.values],
+  );
+
+  // Two-dimensional readout: ←/→ change the tenor, ↑/↓ the date (PageUp/PageDown jump a tenth,
+  // Home/End go to the first/last date), Escape hides; the pointer reads the cell under it. It
+  // clears when the data changes.
+  const rows = props.dates.length;
+  const cols = props.tenors.length;
+  const [cell, setCell] = useState<{ r: number; c: number; via: "pointer" | "key"; data: unknown } | null>(null);
+  const active = cell && cell.data === props.values && cell.r < rows && cell.c < cols ? cell : null;
+  const show = (r: number, c: number, via: "pointer" | "key") => setCell({ r, c, via, data: props.values });
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (rows === 0 || cols === 0) return;
+    const r = active?.r ?? rows - 1;
+    const c = active?.c ?? 0;
+    const step = Math.max(1, Math.round(rows / 10));
+    const clampR = (v: number) => Math.min(rows - 1, Math.max(0, v));
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [r, Math.max(0, c - 1)],
+      ArrowRight: [r, Math.min(cols - 1, c + 1)],
+      ArrowUp: [clampR(r - 1), c],
+      ArrowDown: [clampR(r + 1), c],
+      PageUp: [clampR(r - step), c],
+      PageDown: [clampR(r + step), c],
+      Home: [0, c],
+      End: [rows - 1, c],
+    };
+    if (e.key === "Escape" && active) {
+      e.preventDefault();
+      setCell(null);
+    } else if (moves[e.key]) {
+      e.preventDefault();
+      // The first key press lands on the latest date's first tenor.
+      const [nr, nc] = active ? moves[e.key] : [r, c];
+      show(nr, nc, "key");
+    }
+  };
+
+  const onPointerMove = (e: PointerEvent<SVGSVGElement>) => {
+    if (!content) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - box.left - M.left;
+    const py = e.clientY - box.top - M.top;
+    if (px < 0 || py < 0 || px >= content.iw || py >= content.ih) {
+      if (active?.via === "pointer") setCell(null);
+      return;
+    }
+    show(Math.floor(py / content.cellH), Math.floor(px / content.cellW), "pointer");
+  };
+
+  const readout = useMemo(() => {
+    if (!content || !active) return null;
+    const v = props.values[active.r]?.[active.c] ?? null;
+    const text = v === null || !Number.isFinite(v) ? "no data" : `${v.toFixed(2)}${props.unit ?? ""}`;
+    const title = dayLabel(props.dates[active.r]);
+    return { title, tenor: props.tenors[active.c], text, announce: `${title}, ${props.tenors[active.c]}: ${text}` };
+  }, [content, active, props.values, props.dates, props.tenors, props.unit]);
+
   return (
     <div className="w-full">
-      <div ref={ref} style={{ minHeight: height }}>
+      <div ref={ref} className="relative" style={{ minHeight: height }}>
         {content && (
-          <svg width={width} height={height} role="img" aria-label={props.ariaLabel} className="overflow-visible">
+          <svg
+            width={width}
+            height={height}
+            role="img"
+            aria-label={props.ariaLabel}
+            aria-describedby={hintId}
+            tabIndex={0}
+            className="overflow-visible touch-pan-y"
+            onPointerMove={onPointerMove}
+            onPointerLeave={() => active?.via === "pointer" && setCell(null)}
+            onKeyDown={onKeyDown}
+            onBlur={() => active?.via === "key" && setCell(null)}
+          >
             <g transform={`translate(${M.left},${M.top})`}>
-              {props.values.map((row, di) =>
-                row.map((v, ti) => (
-                  <rect
-                    key={`${di}-${ti}`}
-                    className="heatmap-cell"
-                    x={ti * content.cellW}
-                    y={di * content.cellH}
-                    width={content.cellW + 0.5}
-                    height={content.cellH + 0.5}
-                    fill={v === null || !Number.isFinite(v) ? "var(--grid)" : colorRamp((v - content.min) / content.span)}
-                  />
-                )),
+              {cells}
+              {active && (
+                <rect
+                  className="heatmap-focus"
+                  x={active.c * content.cellW}
+                  y={active.r * content.cellH}
+                  width={content.cellW}
+                  height={Math.max(2, content.cellH)}
+                  fill="none"
+                  stroke="var(--text)"
+                  strokeWidth={1.5}
+                  pointerEvents="none"
+                />
               )}
               {props.tenors.map((label, ti) => (
                 <text
@@ -148,6 +241,23 @@ export const Heatmap = memo(function Heatmap(props: HeatmapProps) {
             </g>
           </svg>
         )}
+        <ChartReadout
+          hintId={hintId}
+          hint="Focus the chart: left and right arrow keys change the tenor, up and down the date."
+          box={
+            content && active && readout
+              ? {
+                  x: M.left + (active.c + 0.5) * content.cellW,
+                  top: M.top + Math.min(active.r * content.cellH, Math.max(0, content.ih - 56)),
+                  flip: (active.c + 0.5) * content.cellW > content.iw / 2,
+                  offset: content.cellW / 2 + 4,
+                  title: readout.title,
+                  rows: [{ id: "v", label: readout.tenor, text: readout.text }],
+                }
+              : null
+          }
+          announce={readout && active?.via === "key" ? readout.announce : null}
+        />
       </div>
       {props.exportTitle && (
         <ExportButtons

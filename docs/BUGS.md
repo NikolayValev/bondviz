@@ -202,6 +202,25 @@
 - **Fix:** a square-root maturity scale (`xScale="sqrt"`) on all seven curve charts, labelled
   "√ scale"; bar charts label every nth category when a label doesn't fit its band.
 
+### BUG-21 · Code review of PR #4 — ✅ FIXED (2026-10-30)
+
+An independent review of the PR #4 diff found these; all fixed except the last, which is documented.
+
+- **Signal rule:** a recession already under way when the curve inverted counted as "preceded"
+  (lead clamped to 0). A recession now has to start on or after the period's first inverted day.
+  The unused per-episode `recessionFollowed` flag, which used a different 24-month rule, is gone.
+- **Crosshair:** the index survived data changes, so after switching a lookback the readout named
+  the wrong date; it now clears when the chart's data changes. Path strings were rebuilt on every
+  pointer move (≈9,000 points on /signal); they're memoized. The readout markup and handlers were
+  copied across three charts; they're one `ChartReadout` + `useCrosshair().svgProps`.
+- **Dates:** "over the month" from Mar 31 measured from Mar 3 (Date overflow); export file names
+  and the PNG stamp used the UTC date, not the viewer's; three copies of the month helpers with
+  different time-zone handling. All now in `lib/dates.ts` (clamped month shifts, local "today").
+- **Stocks:** a failed or rate-limited ticker was cached for the session with no way to retry; it
+  now retries when the list or window changes, and a Retry button appears next to failures.
+- **Accepted:** chart text in exported PNGs uses system fallback fonts (an SVG drawn as an image
+  can't load web fonts); tick labels stay monospace, so their spacing holds.
+
 ---
 
 ## Security / dependencies

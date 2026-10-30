@@ -91,8 +91,8 @@
 > Shipped 2026-10-27. Every shared chart (`LineChart`, `CategoryBarChart`, `Heatmap`,
 > `SpreadHistoryChart`) takes `exportTitle`; the carry, inversion-episode, pricing / portfolio
 > scenario and shock benchmark tables have CSV buttons. The SVG→PNG step lives in
-> `components/charts/` rather than `lib/` because it needs the DOM. Not covered: the three
-> pricing-only charts (`ScenarioChart`, `PriceYieldChart`, `CashflowChart`), whose tables export.
+> `components/charts/` rather than `lib/` because it needs the DOM. The pricing charts
+> (`PriceYieldChart`, `CashflowChart`, `ScenarioChart`) joined on 2026-10-30.
 
 - **Goal:** an "Export" affordance on each Card to download the table as CSV and the chart as PNG.
 - **Files:** new `web/lib/exportCsv.ts` (+test), `web/lib/exportSvg.ts`; an `ExportButton` in

@@ -1,3 +1,5 @@
+import { shiftMonths } from "@/lib/dates";
+
 export interface SpreadPoint {
   date: string;
   s10y3m: number | null; // 10Y − 3M, percentage points
@@ -17,7 +19,6 @@ export interface InversionEpisode {
   end: string;
   days: number;
   maxDepthBps: number; // most negative s10y3m over the run, in bps (<= 0)
-  recessionFollowed: boolean;
 }
 
 export interface NberRecession {
@@ -87,19 +88,6 @@ function monthsBetween(fromIso: string, toIso: string): number {
   return (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
 }
 
-/** A recession "follows" an inversion episode if it overlaps the episode or its
- *  start falls within 24 months after the episode ends. Measuring lead time from
- *  the episode END (not start) correctly flags long multi-year inversions that
- *  begin well over 24 months before the recession but run right up to it. The
- *  month difference is calendar-month-coarse (day-of-month is ignored). */
-function recessionFollows(episodeStart: string, episodeEnd: string): boolean {
-  return NBER_RECESSIONS.some((r) => {
-    const overlaps = r.start <= episodeEnd && r.end >= episodeStart;
-    const lead = monthsBetween(episodeEnd, r.start);
-    return overlaps || (lead >= 0 && lead <= 24);
-  });
-}
-
 /** Maximal consecutive runs of inverted (s10y3m <= 0) points. */
 export function inversionEpisodes(points: SpreadPoint[]): InversionEpisode[] {
   const episodes: InversionEpisode[] = [];
@@ -113,7 +101,6 @@ export function inversionEpisodes(points: SpreadPoint[]): InversionEpisode[] {
       end: points[endIdx].date,
       days: endIdx - runStart + 1,
       maxDepthBps: minVal * 100,
-      recessionFollowed: recessionFollows(start, points[endIdx].date),
     });
     runStart = -1;
     minVal = Infinity;
@@ -161,19 +148,14 @@ export interface InversionPeriod {
 
 const DAY_MS = 86_400_000;
 
-function addMonths(iso: string, months: number): string {
-  const d = new Date(iso);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return d.toISOString().slice(0, 10);
-}
-
-/** What followed a period: the first NBER recession overlapping it or starting within the
- *  window after it ends (lead counted from the period's first inverted day); otherwise none, or
+/** What followed a period: the first NBER recession starting on or after its first inverted day
+ *  and no later than the window after its last (lead counted from the first inverted day). A
+ *  recession already under way when the curve inverted didn't follow it. Otherwise none, or
  *  "pending" while the window is still open as of the last data date. */
 function periodOutcome(start: string, end: string, asOf: string): PeriodOutcome {
-  const windowEnds = addMonths(end, SIGNAL_WINDOW_MONTHS);
-  const r = NBER_RECESSIONS.find((r) => (r.start <= end && r.end >= start) || (r.start >= end && r.start <= windowEnds));
-  if (r) return { kind: "recession", recessionStart: r.start, leadMonths: Math.max(0, monthsBetween(start, r.start)) };
+  const windowEnds = shiftMonths(end, SIGNAL_WINDOW_MONTHS);
+  const r = NBER_RECESSIONS.find((r) => r.start >= start && r.start <= windowEnds);
+  if (r) return { kind: "recession", recessionStart: r.start, leadMonths: monthsBetween(start, r.start) };
   return windowEnds > asOf ? { kind: "pending", windowEnds } : { kind: "none" };
 }
 
@@ -221,7 +203,7 @@ export interface SignalRecord {
 
 /** The scorecard behind the page's summary sentence. `firstDate` is the first data date. */
 export function signalRecord(periods: InversionPeriod[], firstDate: string): SignalRecord {
-  const testableFrom = addMonths(firstDate, SIGNAL_WINDOW_MONTHS);
+  const testableFrom = shiftMonths(firstDate, SIGNAL_WINDOW_MONTHS);
   const testable = NBER_RECESSIONS.filter((r) => r.start >= testableFrom);
   const hits = periods.flatMap((p) => (p.outcome.kind === "recession" ? [p.outcome] : []));
   const preceded = testable.filter((r) => hits.some((h) => h.recessionStart === r.start));

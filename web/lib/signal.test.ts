@@ -97,45 +97,6 @@ describe("inversionEpisodes", () => {
     expect(eps[0].start).toBe("2020-01-01");
     expect(eps[1].start).toBe("2020-01-04");
   });
-
-  it("flags recessionFollowed when an NBER recession starts within 24 months", () => {
-    // 2007-12 recession start; an inversion starting 2006-06 is ~18 months prior.
-    const eps = inversionEpisodes([
-      { date: "2006-06-01", s10y3m: -0.1, s2s10s: 0 },
-      { date: "2006-06-02", s10y3m: -0.2, s2s10s: 0 },
-    ]);
-    expect(eps[0].recessionFollowed).toBe(true);
-  });
-
-  it("does not flag recessionFollowed when no recession is within 24 months", () => {
-    // 2013 inversion: nearest NBER start (2020-02) is > 24 months away.
-    const eps = inversionEpisodes([
-      { date: "2013-01-01", s10y3m: -0.1, s2s10s: 0 },
-      { date: "2013-01-02", s10y3m: -0.2, s2s10s: 0 },
-    ]);
-    expect(eps[0].recessionFollowed).toBe(false);
-  });
-
-  it("flags a long inversion that begins >24m before a recession but runs up to it", () => {
-    // Episode spans 2006-06 → 2007-06 (starts 18m before the 2007-12 recession but
-    // the start is within 24m here); make it start >24m out to exercise end-based lead.
-    const eps = inversionEpisodes([
-      { date: "2005-06-01", s10y3m: -0.1, s2s10s: 0 }, // start is 30m before 2007-12
-      { date: "2006-06-01", s10y3m: -0.2, s2s10s: 0 },
-      { date: "2007-06-01", s10y3m: -0.3, s2s10s: 0 }, // end is 6m before 2007-12
-    ]);
-    expect(eps).toHaveLength(1);
-    expect(eps[0].recessionFollowed).toBe(true); // measured from end, not start
-  });
-
-  it("flags an inversion that overlaps an ongoing recession", () => {
-    // 2008-03 sits inside the 2007-12 → 2009-06 recession.
-    const eps = inversionEpisodes([
-      { date: "2008-03-01", s10y3m: -0.1, s2s10s: 0 },
-      { date: "2008-03-02", s10y3m: -0.2, s2s10s: 0 },
-    ]);
-    expect(eps[0].recessionFollowed).toBe(true);
-  });
 });
 
 describe("NBER_RECESSIONS", () => {
@@ -151,7 +112,6 @@ const run = (start: string, end: string, days: number, maxDepthBps: number): Inv
   end,
   days,
   maxDepthBps,
-  recessionFollowed: false,
 });
 
 describe("inversionPeriods", () => {
@@ -199,6 +159,19 @@ describe("inversionPeriods", () => {
 
   it("leaves a period pending while its window is open", () => {
     expect(periods[4].outcome).toEqual({ kind: "pending", windowEnds: "2027-03-21" });
+  });
+
+  it("doesn't credit a recession already under way when the curve inverted", () => {
+    // Inverts in March 2008, inside the Dec 2007 – Jun 2009 recession; nothing starts within
+    // 24 months after it ends.
+    const [p] = inversionPeriods([run("2008-03-03", "2008-03-04", 2, -5)], "2026-10-20");
+    expect(p.outcome).toEqual({ kind: "none" });
+  });
+
+  it("measures the window from the end, so a long inversion still counts", () => {
+    // Starts 30 months before the Dec 2007 recession but runs to 6 months before it.
+    const [p] = inversionPeriods([run("2005-06-01", "2007-06-01", 300, -40)], "2026-10-20");
+    expect(p.outcome).toEqual({ kind: "recession", recessionStart: "2007-12-01", leadMonths: 30 });
   });
 
   it("keeps runs apart when the gap is long enough", () => {
