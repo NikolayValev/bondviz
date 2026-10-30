@@ -1,8 +1,12 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useId, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import { line } from "d3-shape";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { useCrosshair } from "@/components/charts/useCrosshair";
+import { ChartReadout } from "@/components/charts/ChartReadout";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { closestIndex } from "@/lib/crosshair";
 
 const M = { top: 16, right: 18, bottom: 40, left: 64 };
 
@@ -13,16 +17,21 @@ export function PriceYieldChart({
   currentYield,
   currentPrice,
   dv01,
+  exportTitle,
 }: {
   curve: { yield: number; price: number }[];
   currentYield: number;
   currentPrice: number;
   dv01: number;
+  /** Shows CSV / PNG download buttons; the title heads the image and names the files. */
+  exportTitle?: string;
 }) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = measured;
   const height = 300;
-  const [hover, setHover] = useState<number | null>(null);
+  const hintId = useId();
+  const cross = useCrosshair(curve);
+  const hover = cross.index;
 
   const c = useMemo(() => {
     if (width === 0 || curve.length === 0) return null;
@@ -43,7 +52,7 @@ export function PriceYieldChart({
       price: currentPrice + slope * (yy - currentYield),
     }));
 
-    return { iw, ih, x, y, gen, xTicks: x.ticks(6), yTicks: y.ticks(5), tangent };
+    return { iw, ih, x, y, gen, xTicks: x.ticks(6), yTicks: y.ticks(5), tangent, slope, px: xs.map((v) => x(v)) };
   }, [curve, currentYield, currentPrice, dv01, width]);
 
   const fmtPrice = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -57,19 +66,9 @@ export function PriceYieldChart({
           height={height}
           role="img"
           aria-label="Bond price as a function of yield, with the duration tangent line"
-          className="overflow-visible"
-          onMouseLeave={() => setHover(null)}
-          onMouseMove={(e) => {
-            const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
-            const mx = e.clientX - rect.left - M.left;
-            let nearest = 0;
-            let best = Infinity;
-            curve.forEach((p, i) => {
-              const d = Math.abs(c.x(p.yield) - mx);
-              if (d < best) { best = d; nearest = i; }
-            });
-            setHover(nearest);
-          }}
+          aria-describedby={hintId}
+          className="overflow-visible touch-pan-y"
+          {...cross.svgProps(M.left, (px) => closestIndex(c.px, px))}
         >
           <g transform={`translate(${M.left},${M.top})`}>
             {c.yTicks.map((t) => (
@@ -103,18 +102,43 @@ export function PriceYieldChart({
           </g>
         </svg>
       )}
+      <ChartReadout
+        hintId={hintId}
+        box={null}
+        announce={
+          hovered && cross.via === "key"
+            ? `Yield ${(hovered.yield * 100).toFixed(2)}%: price ${hovered.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            : null
+        }
+      />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap gap-4 text-[var(--muted)]">
           <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded bg-[var(--accent)]" /> Price–yield curve</span>
           <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded" style={{ borderTop: "1.5px dashed var(--warn)" }} /> Duration (linear estimate)</span>
         </div>
-        {hovered && (
-          <div className="tabnum text-[var(--muted)]">
-            <span className="text-[var(--text)]">{(hovered.yield * 100).toFixed(2)}%</span>
-            {" → "}
-            <span className="text-[var(--accent)]">{hovered.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {hovered && (
+            <div className="tabnum text-[var(--muted)]">
+              <span className="text-[var(--text)]">{(hovered.yield * 100).toFixed(2)}%</span>
+              {" → "}
+              <span className="text-[var(--accent)]">{hovered.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
+          {exportTitle && c && (
+            <ExportButtons
+              title={exportTitle}
+              csv={() => ({
+                columns: ["Yield (%)", "Price", "Duration estimate"],
+                rows: curve.map((p) => [p.yield * 100, p.price, currentPrice + c.slope * (p.yield - currentYield)]),
+              })}
+              svg={() => ref.current?.querySelector("svg")}
+              legend={[
+                { label: "Price–yield curve", color: "var(--accent)" },
+                { label: "Duration (linear estimate)", color: "var(--warn)" },
+              ]}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

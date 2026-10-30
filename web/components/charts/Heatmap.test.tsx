@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { Heatmap, colorRamp, dateTickIndices } from "@/components/charts/Heatmap";
 
 describe("colorRamp", () => {
@@ -122,3 +122,47 @@ describe("Heatmap axes", () => {
     expect(legend?.textContent).toContain("4.50%");
   });
 });
+
+describe("Heatmap readout", () => {
+  const props = {
+    ariaLabel: "yields",
+    width: 500,
+    height: 300,
+    unit: "%",
+    dates: ["2026-10-12", "2026-10-13", "2026-10-14"],
+    tenors: ["2Y", "10Y"],
+    values: [
+      [4.7, 5.1],
+      [4.75, 5.15],
+      [4.8, null],
+    ],
+  };
+
+  it("walks dates and tenors by keyboard, starting at the latest date", () => {
+    const { container } = render(<Heatmap {...props} />);
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    const live = container.querySelector("[aria-live]") as HTMLElement;
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    expect(live.textContent).toBe("Oct 14, 2026, 2Y: 4.80%");
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    expect(live.textContent).toBe("Oct 14, 2026, 10Y: no data");
+    fireEvent.keyDown(svg, { key: "ArrowUp" });
+    expect(live.textContent).toBe("Oct 13, 2026, 10Y: 5.15%");
+    fireEvent.keyDown(svg, { key: "Home" });
+    expect(live.textContent).toBe("Oct 12, 2026, 10Y: 5.10%");
+    expect(container.querySelector("rect.heatmap-focus")).toBeTruthy();
+    fireEvent.keyDown(svg, { key: "Escape" });
+    expect(container.querySelector("rect.heatmap-focus")).toBeNull();
+  });
+
+  it("reads the cell under the pointer without announcing it", () => {
+    const { container } = render(<Heatmap {...props} />);
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    // Plot is 64px in and 8px down; cells are (500 − 64 − 12) / 2 = 212 wide, (300 − 8 − 64) / 3 = 76 tall.
+    fireEvent.pointerMove(svg, { clientX: 64 + 212 + 10, clientY: 8 + 76 + 10 });
+    const box = container.querySelector("div[aria-hidden='true'].absolute") as HTMLElement;
+    expect(box.textContent).toBe("Oct 13, 202610Y5.15%");
+    expect(container.querySelector("[aria-live]")?.textContent).toBe("");
+  });
+});
+

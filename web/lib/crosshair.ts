@@ -14,6 +14,20 @@ export function nearestIndex(sorted: number[], x: number): number {
   return Math.abs(x - sorted[lo]) <= Math.abs(sorted[hi] - x) ? lo : hi;
 }
 
+/** Index of the value closest to `x` in any order (a linear scan, for short unsorted lists). */
+export function closestIndex(values: number[], x: number): number {
+  let best = -1;
+  let bestDiff = Infinity;
+  values.forEach((v, i) => {
+    const d = Math.abs(v - x);
+    if (d < bestDiff) {
+      best = i;
+      bestDiff = d;
+    }
+  });
+  return best;
+}
+
 /**
  * A series' value at `x`: exact where it has a point, linear between its neighbours (what the
  * drawn line shows), and null outside its range, so a shorter series isn't extrapolated.

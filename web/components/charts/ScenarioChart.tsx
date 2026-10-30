@@ -1,8 +1,12 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useId, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import { line, area } from "d3-shape";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
+import { useCrosshair } from "@/components/charts/useCrosshair";
+import { ChartReadout } from "@/components/charts/ChartReadout";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { closestIndex } from "@/lib/crosshair";
 import type { ScenarioRow } from "@/lib/finance";
 
 const M = { top: 16, right: 18, bottom: 40, left: 64 };
@@ -13,11 +17,22 @@ interface Point {
   approx: number;
 }
 
-export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePrice: number }) {
+export function ScenarioChart({
+  rows,
+  basePrice,
+  exportTitle,
+}: {
+  rows: ScenarioRow[];
+  basePrice: number;
+  /** Shows a PNG download button (the scenario table beside it has the CSV). */
+  exportTitle?: string;
+}) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
   const width = measured;
   const height = 300;
-  const [hover, setHover] = useState<number | null>(null);
+  const hintId = useId();
+  const cross = useCrosshair(rows);
+  const hover = cross.index;
 
   const c = useMemo(() => {
     if (width === 0 || rows.length === 0) return null;
@@ -38,7 +53,7 @@ export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePr
     const lineApprox = line<Point>().x((p) => x(p.bps)).y((p) => y(p.approx));
     const gap = area<Point>().x((p) => x(p.bps)).y0((p) => y(p.actual)).y1((p) => y(p.approx));
 
-    return { iw, ih, x, y, pts, lineActual, lineApprox, gap, xTicks: x.ticks(7), yTicks: y.ticks(5) };
+    return { iw, ih, x, y, pts, lineActual, lineApprox, gap, xTicks: x.ticks(7), yTicks: y.ticks(5), px: pts.map((p) => x(p.bps)) };
   }, [rows, basePrice, width]);
 
   const fmtPrice = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -52,19 +67,9 @@ export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePr
           height={height}
           role="img"
           aria-label="Bond price versus parallel yield shift: actual reprice and duration plus convexity approximation"
-          className="overflow-visible"
-          onMouseLeave={() => setHover(null)}
-          onMouseMove={(e) => {
-            const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
-            const mx = e.clientX - rect.left - M.left;
-            let nearest = 0;
-            let best = Infinity;
-            c.pts.forEach((p, i) => {
-              const d = Math.abs(c.x(p.bps) - mx);
-              if (d < best) { best = d; nearest = i; }
-            });
-            setHover(nearest);
-          }}
+          aria-describedby={hintId}
+          className="overflow-visible touch-pan-y"
+          {...cross.svgProps(M.left, (px) => closestIndex(c.px, px))}
         >
           <g transform={`translate(${M.left},${M.top})`}>
             {/* y grid + labels */}
@@ -119,6 +124,16 @@ export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePr
         </svg>
       )}
 
+      <ChartReadout
+        hintId={hintId}
+        hint="Focus the chart and use the left and right arrow keys to read each shift."
+        box={null}
+        announce={
+          hovered && cross.via === "key"
+            ? `${hovered.bps > 0 ? "+" : ""}${hovered.bps} bps: actual ${hovered.actual.toLocaleString(undefined, { maximumFractionDigits: 2 })}, duration plus convexity ${hovered.approx.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            : null
+        }
+      />
       {/* Legend + readout */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap gap-4 text-[var(--muted)]">
@@ -129,15 +144,27 @@ export function ScenarioChart({ rows, basePrice }: { rows: ScenarioRow[]; basePr
             <span className="inline-block h-0.5 w-4 rounded bg-[var(--warn)]" style={{ borderTop: "1.75px dashed var(--warn)", background: "transparent" }} /> Duration + convexity
           </span>
         </div>
-        {hovered && (
-          <div className="tabnum text-[var(--muted)]">
-            <span className="text-[var(--text)]">{hovered.bps > 0 ? `+${hovered.bps}` : hovered.bps} bps</span>
-            {" · actual "}
-            <span className="text-[var(--accent)]">{hovered.actual.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            {" · approx "}
-            <span className="text-[var(--warn)]">{hovered.approx.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {hovered && (
+            <div className="tabnum text-[var(--muted)]">
+              <span className="text-[var(--text)]">{hovered.bps > 0 ? `+${hovered.bps}` : hovered.bps} bps</span>
+              {" · actual "}
+              <span className="text-[var(--accent)]">{hovered.actual.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              {" · approx "}
+              <span className="text-[var(--warn)]">{hovered.approx.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
+          {exportTitle && (
+            <ExportButtons
+              title={exportTitle}
+              svg={() => ref.current?.querySelector("svg")}
+              legend={[
+                { label: "Actual reprice", color: "var(--accent)" },
+                { label: "Duration + convexity", color: "var(--warn)" },
+              ]}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

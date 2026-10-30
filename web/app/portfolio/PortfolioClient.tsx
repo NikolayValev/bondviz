@@ -220,7 +220,7 @@ export function PortfolioClient() {
               />
             </div>
           </div>
-          <div className="mt-6"><ScenarioChart rows={rows} basePrice={metrics.totalValue} /></div>
+          <div className="mt-6"><ScenarioChart rows={rows} basePrice={metrics.totalValue} exportTitle="Portfolio stress test" /></div>
 
           <div className="mt-6 overflow-hidden rounded-[var(--radius)] border border-[var(--panel-border)]">
             <table className="w-full text-sm">

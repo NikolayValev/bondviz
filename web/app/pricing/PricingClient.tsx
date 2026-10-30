@@ -219,14 +219,14 @@ export function PricingClient() {
           <h2 className="text-lg">Price vs. yield</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">The convex curve vs. the straight-line duration estimate.</p>
           <div className="mt-4">
-            <PriceYieldChart curve={m.pyCurve} currentYield={m.y} currentPrice={m.pv} dv01={m.dollar01} />
+            <PriceYieldChart curve={m.pyCurve} currentYield={m.y} currentPrice={m.pv} dv01={m.dollar01} exportTitle="Price vs yield" />
           </div>
         </Card>
         <Card className="rise">
           <h2 className="text-lg">Where the value sits</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">Present value of each cashflow; the dashed line is duration.</p>
           <div className="mt-4">
-            <CashflowChart data={m.dcf} duration={m.dur} />
+            <CashflowChart data={m.dcf} duration={m.dur} exportTitle="Discounted cashflows" />
           </div>
         </Card>
       </div>
@@ -254,7 +254,7 @@ export function PricingClient() {
             />
           </div>
         </div>
-        <div className="mt-6"><ScenarioChart rows={m.rows} basePrice={m.pv} /></div>
+        <div className="mt-6"><ScenarioChart rows={m.rows} basePrice={m.pv} exportTitle="Bond scenario analysis" /></div>
 
         <div className="mt-6 hidden overflow-hidden rounded-[var(--radius)] border border-[var(--panel-border)] sm:block">
           <table className="w-full text-sm">

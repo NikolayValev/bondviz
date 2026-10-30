@@ -54,7 +54,8 @@ Shape    : --radius 14px
 
 **Chart readouts.** Hovering, dragging (touch) or arrow-keying a shared chart shows a dashed
 crosshair, a dot on each series and a small `--panel-2` value box that flips sides past the
-middle; bar charts highlight the category band and add a total for stacked bars. Values use the
+middle; bar charts highlight the category band and add a total for stacked bars; the heatmap
+outlines the cell (date × tenor); the pricing charts keep their readout in the legend row. Values use the
 chart's units at a precision that suits the data (0 decimals for bps).
 
 **Maturity axes** use `xScale="sqrt"` (ticks 0, 1, 2, 5, 10, 20, 30; the axis title adds "√ scale"),

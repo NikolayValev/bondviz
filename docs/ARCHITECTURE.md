@@ -202,10 +202,10 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 - **Tokens, not hex** (aspirational — see known debt). Use `var(--accent)` etc. New code should
   not add raw hex; chart series colors are the current offender.
 - **Numbers are tabular.** Add `className="tabnum"` to any numeric display (monospace + `tnum`).
-- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`, and the shared charts
-  (`LineChart`, `CategoryBarChart`, `SpreadHistoryChart`) are focusable: arrow keys move a
-  crosshair whose values are announced through a polite live region, and the pointer shows the
-  same readout (`useCrosshair` + `ChartReadout` + `lib/crosshair.ts`). Spreads/changes use
+- **Accessibility.** Charts carry `role="img"` + a descriptive `aria-label`, and every chart is
+  focusable: arrow keys move a crosshair whose values are announced through a polite live
+  region, and the pointer shows the same readout (`useCrosshair` + `ChartReadout` +
+  `lib/crosshair.ts`; the heatmap walks dates with ↑/↓ and tenors with ←/→). Spreads/changes use
   sign + text, not color alone; inputs have labels; inline links are underlined; wide tables go
   in a `ScrollRegion`. Baseline 2026-10-16: zero axe-core (WCAG 2.1 AA) violations on every route
   at 1280 and 390px. Keep it that way.
