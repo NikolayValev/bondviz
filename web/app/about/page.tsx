@@ -250,10 +250,11 @@ export default function AboutPage() {
           point recorded.
         </p>
         <p>
-          A recession <strong>follows</strong> a period if an NBER-dated recession overlaps it or
-          starts within 24 months of its end. Measuring from the end rather than the start credits
-          long inversions that run right up to a downturn; the <strong>lead</strong> is counted from
-          the first inverted day. A period whose 24 months haven&apos;t passed yet is reported as too
+          A recession <strong>follows</strong> a period if an NBER-dated recession starts after its
+          first inverted day and no later than 24 months after its last; one already under way when
+          the curve inverted doesn&apos;t count. Measuring the window from the end credits long
+          inversions that run right up to a downturn; the <strong>lead</strong> is counted from the
+          first inverted day. A period whose 24 months haven&apos;t passed yet is reported as too
           early to tell rather than as a miss, and recessions without two years of data before them
           (1990) aren&apos;t scored. The NBER peak-to-trough dates are maintained by hand, and the chart
           shades them behind every daily spread since 1990.

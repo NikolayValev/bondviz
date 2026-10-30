@@ -1,9 +1,12 @@
 import { SITE_URL } from "@/lib/site";
+import { localIsoDate } from "@/lib/dates";
 
 // Chart → PNG, in the browser, no dependencies. Chart colors are CSS variables and text styles
 // come from classes, neither of which exists once the SVG is drawn as a standalone image, so the
 // computed styles are inlined first. The PNG adds what lives outside the SVG on screen: a title,
-// the legend, and a source line.
+// the legend, and a source line. Known limit: an SVG drawn as an image can't load the page's web
+// fonts, so chart text falls back to the stack's system fonts (tick labels stay monospace, so
+// their widths don't change); the title and legend are drawn on the canvas in the page font.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -153,7 +156,7 @@ export async function chartPng(svg: SVGSVGElement, title: string, legend: Legend
   ctx.fillStyle = colors.muted;
   ctx.fillText(new URL(SITE_URL).host, PAD, y + FOOTER_H / 2 + 2);
   ctx.textAlign = "right";
-  ctx.fillText(new Date().toISOString().slice(0, 10), PAD + width, y + FOOTER_H / 2 + 2);
+  ctx.fillText(localIsoDate(), PAD + width, y + FOOTER_H / 2 + 2);
 
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG encoding failed"))), "image/png"),

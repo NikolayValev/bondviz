@@ -8,6 +8,8 @@ import { ExportButtons } from "@/components/ui/ExportButtons";
 import { axisUnit, seriesTable } from "@/lib/exportCsv";
 import { nearestIndex, readoutDecimals, valueAt } from "@/lib/crosshair";
 import { useCrosshair } from "@/components/charts/useCrosshair";
+import { ChartReadout } from "@/components/charts/ChartReadout";
+import { dayLabel, MONTHS } from "@/lib/dates";
 
 export interface Series {
   id: string;
@@ -40,7 +42,6 @@ const M = { top: 12, right: 16, bottom: 36, left: 48 };
 /** Tick maturities for a √ axis: dense where the tenors are, at round numbers. */
 const SQRT_TICKS = [0, 1, 2, 5, 10, 20, 30, 50];
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
  * Labels for UTC time-axis ticks. Day ticks read "Oct 14". Month ticks read "May ’26", "Jun",
@@ -63,10 +64,6 @@ export function maturityLabel(years: number): string {
   return years < 1 ? `${Math.round(years * 12)}M` : `${+years.toFixed(2)}Y`;
 }
 
-const dateLabel = (t: number) => {
-  const d = new Date(t);
-  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
-};
 
 export const LineChart = memo(function LineChart(props: LineChartProps) {
   const { ref, width: measured } = useResizeObserver<HTMLDivElement>();
@@ -117,10 +114,13 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
     const sorted = props.series.map((s) => [...s.points].sort((a, b) => a[0] - b[0]));
     const invertX = (px: number) => (isTime ? xTime.invert(px).getTime() : xLin.invert(px));
 
-    return { iw, ih, x, y, gen, xTicks, yTicks, fmtX, fmtY, xs, sorted, invertX, isSqrt, ySpan: (y1 ?? 0) - (y0 ?? 0) };
+    // Path strings live here, not in render: the crosshair re-renders on every pointer move.
+    const paths = props.series.map((s) => gen(s.points) ?? "");
+
+    return { iw, ih, x, y, paths, xTicks, yTicks, fmtX, fmtY, xs, sorted, invertX, isSqrt, ySpan: (y1 ?? 0) - (y0 ?? 0) };
   }, [props.series, props.zeroBaseline, props.xType, props.xScale, props.yUnit, width, height]);
 
-  const cross = useCrosshair(content?.xs.length ?? 0);
+  const cross = useCrosshair(content?.xs);
   const readout = useMemo(() => {
     if (!content || cross.index === null) return null;
     const xv = content.xs[cross.index];
@@ -132,7 +132,7 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
     return {
       xv,
       title:
-        props.xType === "time" ? dateLabel(xv) : xUnit === "years" ? maturityLabel(xv) : `${props.xLabel ?? "x"} ${+xv.toFixed(4)}`,
+        props.xType === "time" ? dayLabel(xv) : xUnit === "years" ? maturityLabel(xv) : `${props.xLabel ?? "x"} ${+xv.toFixed(4)}`,
       rows: props.series
         .map((s, i) => ({ id: s.id, label: s.label, color: s.color, value: valueAt(content.sorted[i], xv) }))
         .filter((r): r is typeof r & { value: number } => r.value !== null)
@@ -152,15 +152,8 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
             role="img"
             aria-label={props.ariaLabel}
             aria-describedby={hintId}
-            tabIndex={0}
             className="overflow-visible touch-pan-y"
-            onPointerMove={(e) => {
-              const left = e.currentTarget.getBoundingClientRect().left + M.left;
-              cross.show(nearestIndex(content.xs, content.invertX(e.clientX - left)), "pointer");
-            }}
-            onPointerLeave={() => cross.via === "pointer" && cross.hide()}
-            onKeyDown={cross.onKeyDown}
-            onBlur={() => cross.via === "key" && cross.hide()}
+            {...cross.svgProps(M.left, (px) => nearestIndex(content.xs, content.invertX(px)))}
           >
             <g transform={`translate(${M.left},${M.top})`}>
               {content.yTicks.map((t) => (
@@ -182,11 +175,11 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
               {props.zeroBaseline && (
                 <line x1={0} x2={content.iw} y1={content.y(0)} y2={content.y(0)} stroke="var(--muted)" strokeDasharray="3 3" />
               )}
-              {props.series.map((s) => (
+              {props.series.map((s, i) => (
                 <path
                   key={s.id}
                   className="series-line"
-                  d={content.gen(s.points) ?? ""}
+                  d={content.paths[i]}
                   fill="none"
                   stroke={s.color}
                   strokeWidth={2}
@@ -228,36 +221,25 @@ export const LineChart = memo(function LineChart(props: LineChartProps) {
             </g>
           </svg>
         )}
-        {content && readout && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute z-10 min-w-32 rounded-md border border-[var(--panel-border-strong)] bg-[var(--panel-2)] px-2.5 py-2 text-xs shadow-lg"
-            style={{
-              top: M.top + 4,
-              left: M.left + content.x(readout.xv),
-              transform: content.x(readout.xv) > content.iw / 2 ? "translateX(calc(-100% - 12px))" : "translateX(12px)",
-            }}
-          >
-            <div className="tabnum mb-1 text-[var(--text)]">{readout.title}</div>
-            {readout.rows.map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-4 text-[var(--muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: r.color }} />
-                  {r.label}
-                </span>
-                <span className="tabnum text-[var(--text)]">{r.text}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <span id={hintId} className="sr-only">
-          Focus the chart and use the left and right arrow keys to read values.
-        </span>
-        <div className="sr-only" aria-live="polite">
-          {readout && cross.via === "key"
-            ? `${readout.title}: ${readout.rows.map((r) => `${r.label} ${r.text}`).join(", ")}`
-            : ""}
-        </div>
+        <ChartReadout
+          hintId={hintId}
+          box={
+            content && readout
+              ? {
+                  x: M.left + content.x(readout.xv),
+                  top: M.top + 4,
+                  flip: content.x(readout.xv) > content.iw / 2,
+                  title: readout.title,
+                  rows: readout.rows,
+                }
+              : null
+          }
+          announce={
+            readout && cross.via === "key"
+              ? `${readout.title}: ${readout.rows.map((r) => `${r.label} ${r.text}`).join(", ")}`
+              : null
+          }
+        />
       </div>
       {(props.series.length > 1 || props.exportTitle) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">

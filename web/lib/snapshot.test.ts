@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { marketSnapshot, nearestRow, shiftMonths } from "@/lib/snapshot";
+import { marketSnapshot, nearestRow } from "@/lib/snapshot";
 
 const row = (date: string, y3m: number, y2: number, y10: number) => ({
   date,
@@ -16,14 +16,6 @@ describe("nearestRow", () => {
   });
   it("returns null for no rows", () => {
     expect(nearestRow([], "2026-09-20")).toBeNull();
-  });
-});
-
-describe("shiftMonths", () => {
-  it("moves by calendar months in UTC", () => {
-    expect(shiftMonths("2026-10-13", -1)).toBe("2026-09-13");
-    expect(shiftMonths("2026-01-15", -1)).toBe("2025-12-15");
-    expect(shiftMonths("2026-10-13", -12)).toBe("2025-10-13");
   });
 });
 

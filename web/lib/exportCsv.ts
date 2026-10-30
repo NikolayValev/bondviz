@@ -1,3 +1,5 @@
+import { localIsoDate } from "@/lib/dates";
+
 // CSV export, pure: builds the text and the file name. The download itself (Blob + link click)
 // lives in components/ui/ExportButtons.tsx.
 
@@ -64,7 +66,8 @@ export function axisUnit(axisLabel: string | undefined): string | undefined {
   return axisLabel ? /\(([^()]+)\)\s*$/.exec(axisLabel)?.[1] : undefined;
 }
 
-/** "Zero & forward curve" → "bondviz-zero-forward-curve-2026-10-27.png". */
+/** "Zero & forward curve" → "bondviz-zero-forward-curve-2026-10-27.png", stamped with the
+ *  viewer's own date. */
 export function exportFilename(title: string, ext: "csv" | "png", date = new Date()): string {
   const slug = title
     .toLowerCase()
@@ -73,5 +76,5 @@ export function exportFilename(title: string, ext: "csv" | "png", date = new Dat
     .replace(/^-+|-+$/g, "")
     .slice(0, 60)
     .replace(/-+$/, "");
-  return `bondviz-${slug || "export"}-${date.toISOString().slice(0, 10)}.${ext}`;
+  return `bondviz-${slug || "export"}-${localIsoDate(date)}.${ext}`;
 }

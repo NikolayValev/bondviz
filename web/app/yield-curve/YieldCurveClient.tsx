@@ -15,6 +15,7 @@ import { oneOf, type Schema } from "@/lib/urlState";
 import { ShockScenario } from "./ShockScenario";
 import { LazyMount } from "@/components/LazyMount";
 import { nearestRow } from "@/lib/snapshot";
+import { shiftMonths } from "@/lib/dates";
 import { Segmented } from "@/components/ui/Segmented";
 
 const COMPARE = [
@@ -72,9 +73,7 @@ export function YieldCurveClient() {
       { id: "latest", label: latest.date, color: SERIES[0], points: latestCurve.map((p) => [p.years, p.yield]) },
     ];
     for (const c of COMPARE) {
-      const target = new Date(latest.date);
-      target.setMonth(target.getMonth() - c.months);
-      const row = nearestRow(rows, iso(target));
+      const row = nearestRow(rows, shiftMonths(latest.date, -c.months));
       if (row) {
         const pts = rowToCurve(row).map((p) => [p.years, p.yield] as [number, number]);
         if (pts.length) curveSeries.push({ id: c.label, label: c.label, color: c.color, points: pts });

@@ -6,7 +6,9 @@ import { extent, min, max } from "d3-array";
 import { useResizeObserver } from "@/components/charts/useResizeObserver";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { useCrosshair } from "@/components/charts/useCrosshair";
+import { ChartReadout } from "@/components/charts/ChartReadout";
 import { nearestIndex } from "@/lib/crosshair";
+import { dayLabel } from "@/lib/dates";
 import { SERIES } from "@/lib/chartColors";
 import type { SpreadPoint, NberRecession } from "@/lib/signal";
 
@@ -24,8 +26,7 @@ const M = { top: 14, right: 18, bottom: 30, left: 50 };
 
 const bps = (v: number | null) => (v === null ? null : v * 100);
 const fmtBps = (v: number | null) => (v === null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(0)} bps`);
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const dateLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}, ${iso.slice(0, 4)}`;
+
 
 interface XY { t: number; v: number; }
 
@@ -86,13 +87,18 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
       })
       .filter((b) => b.x + b.w >= 0 && b.x <= iw);
 
+    // Path strings are built once here, not in render: ~9,000 points per line, and the crosshair
+    // re-renders on every pointer move.
     return {
-      iw, ih, x, y, zeroY, s10, s2, lineGen, invArea, recBands, s10Fill: withZeroCrossings(s10),
+      iw, ih, x, y, zeroY, recBands,
+      invPath: invArea(withZeroCrossings(s10)) ?? "",
+      s2Path: lineGen(s2) ?? "",
+      s10Path: lineGen(s10) ?? "",
       xTicks: x.ticks(8), yTicks: y.ticks(5), ts: allT,
     };
   }, [props.points, props.recessions, width, height]);
 
-  const cross = useCrosshair(c?.ts.length ?? 0);
+  const cross = useCrosshair(c?.ts);
   const readout = useMemo(() => {
     if (!c || cross.index === null) return null;
     const p = props.points[cross.index];
@@ -101,11 +107,11 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
     const inRecession = props.recessions.some((r) => r.start <= p.date && p.date <= r.end);
     return {
       t: c.ts[cross.index],
-      title: dateLabel(p.date),
+      title: dayLabel(p.date),
       s10,
       s2,
       inRecession,
-      text: `${dateLabel(p.date)}: 10y–3m ${fmtBps(s10)}, 2s10s ${fmtBps(s2)}${inRecession ? ", NBER recession" : ""}`,
+      text: `${dayLabel(p.date)}: 10y–3m ${fmtBps(s10)}, 2s10s ${fmtBps(s2)}${inRecession ? ", NBER recession" : ""}`,
     };
   }, [c, cross.index, props.points, props.recessions]);
 
@@ -121,15 +127,8 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
             role="img"
             aria-label={props.ariaLabel}
             aria-describedby={hintId}
-            tabIndex={0}
             className="overflow-visible touch-pan-y"
-            onPointerMove={(e) => {
-              const left = e.currentTarget.getBoundingClientRect().left + M.left;
-              cross.show(nearestIndex(c.ts, c.x.invert(e.clientX - left).getTime()), "pointer");
-            }}
-            onPointerLeave={() => cross.via === "pointer" && cross.hide()}
-            onKeyDown={cross.onKeyDown}
-            onBlur={() => cross.via === "key" && cross.hide()}
+            {...cross.svgProps(M.left, (px) => nearestIndex(c.ts, c.x.invert(px).getTime()))}
           >
             <g transform={`translate(${M.left},${M.top})`}>
               {/* recession bands (behind everything) */}
@@ -153,12 +152,12 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
                 </g>
               ))}
               {/* inversion fill (red, below zero) */}
-              <path className="inversion-fill" d={c.invArea(c.s10Fill) ?? ""} fill="var(--neg)" opacity={0.18} />
+              <path className="inversion-fill" d={c.invPath} fill="var(--neg)" opacity={0.18} />
               {/* zero baseline */}
               <line x1={0} x2={c.iw} y1={c.zeroY} y2={c.zeroY} stroke="var(--panel-border-strong)" strokeDasharray="3 3" />
               {/* series */}
-              <path className="series-2s10s" d={c.lineGen(c.s2) ?? ""} fill="none" stroke={SERIES[1]} strokeWidth={1.5} opacity={0.85} />
-              <path className="series-10y3m" d={c.lineGen(c.s10) ?? ""} fill="none" stroke="var(--accent)" strokeWidth={2} />
+              <path className="series-2s10s" d={c.s2Path} fill="none" stroke={SERIES[1]} strokeWidth={1.5} opacity={0.85} />
+              <path className="series-10y3m" d={c.s10Path} fill="none" stroke="var(--accent)" strokeWidth={2} />
               {readout && (
                 <g className="crosshair" pointerEvents="none">
                   <line x1={c.x(readout.t)} x2={c.x(readout.t)} y1={0} y2={c.ih} stroke="var(--muted)" strokeDasharray="3 3" />
@@ -173,32 +172,26 @@ export function SpreadHistoryChart(props: SpreadHistoryChartProps) {
             </g>
           </svg>
         )}
-        {c && readout && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute z-10 min-w-36 rounded-md border border-[var(--panel-border-strong)] bg-[var(--panel-2)] px-2.5 py-2 text-xs shadow-lg"
-            style={{
-              top: M.top + 4,
-              left: M.left + c.x(readout.t),
-              transform: c.x(readout.t) > c.iw / 2 ? "translateX(calc(-100% - 12px))" : "translateX(12px)",
-            }}
-          >
-            <div className="tabnum mb-1 text-[var(--text)]">{readout.title}</div>
-            <div className="flex justify-between gap-4 text-[var(--muted)]">
-              10y–3m <span className="tabnum text-[var(--text)]">{fmtBps(readout.s10)}</span>
-            </div>
-            <div className="flex justify-between gap-4 text-[var(--muted)]">
-              2s10s <span className="tabnum text-[var(--text)]">{fmtBps(readout.s2)}</span>
-            </div>
-            {readout.inRecession && <div className="mt-1 text-[var(--muted)]">NBER recession</div>}
-          </div>
-        )}
-        <span id={hintId} className="sr-only">
-          Focus the chart and use the left and right arrow keys to read values; Page Up and Page Down jump further.
-        </span>
-        <div className="sr-only" aria-live="polite">
-          {readout && cross.via === "key" ? readout.text : ""}
-        </div>
+        <ChartReadout
+          hintId={hintId}
+          hint="Focus the chart and use the left and right arrow keys to read values; Page Up and Page Down jump further."
+          box={
+            c && readout
+              ? {
+                  x: M.left + c.x(readout.t),
+                  top: M.top + 4,
+                  flip: c.x(readout.t) > c.iw / 2,
+                  title: readout.title,
+                  rows: [
+                    { id: "s10", label: "10y–3m", text: fmtBps(readout.s10) },
+                    { id: "s2", label: "2s10s", text: fmtBps(readout.s2) },
+                  ],
+                  footer: readout.inRecession ? <div className="mt-1 text-[var(--muted)]">NBER recession</div> : null,
+                }
+              : null
+          }
+          announce={readout && cross.via === "key" ? readout.text : null}
+        />
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-0.5 w-4 rounded bg-[var(--accent)]" /> 10y–3m</span>

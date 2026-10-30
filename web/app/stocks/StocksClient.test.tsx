@@ -55,6 +55,25 @@ describe("StocksClient", () => {
     expect(tickersFetched().filter((t) => t === "AAPL")).toHaveLength(1);
   });
 
+  it("lets a rate-limited ticker be retried", async () => {
+    let msftCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        const ticker = new URL(input, "http://x").searchParams.get("ticker") ?? "";
+        if (ticker === "MSFT" && msftCalls++ === 0)
+          return { json: async () => ({ configured: true, bars: [], error: "rate limited by Polygon" }) };
+        return { json: async () => ({ configured: true, bars: barsFor(ticker) }) };
+      }),
+    );
+    render(<StocksClient />);
+    expect(await screen.findByText(/Couldn.t load: MSFT \(rate limited by Polygon\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    const table = await screen.findByRole("table", { name: /Return over 3M/ });
+    await waitFor(() => expect(within(table).getAllByRole("row")).toHaveLength(4)); // header + 3 tickers
+    expect(msftCalls).toBe(2);
+  });
+
   it("shows the key notice and no comparison when Polygon isn't configured", async () => {
     mockApi(false);
     render(<StocksClient />);

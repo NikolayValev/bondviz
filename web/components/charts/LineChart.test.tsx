@@ -106,6 +106,19 @@ describe("LineChart readout", () => {
     expect(container.querySelector(".crosshair")).toBeNull();
   });
 
+  it("clears the crosshair when the data changes instead of pointing at a new value", () => {
+    const series = (pts: [number, number][]) => [{ id: "a", label: "A", color: "red", points: pts }];
+    const { container, rerender } = render(
+      <LineChart ariaLabel="c" width={400} height={200} series={series([[1, 4], [2, 5], [3, 6]])} />,
+    );
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    fireEvent.keyDown(svg, { key: "End" });
+    expect(container.querySelector(".crosshair")).toBeTruthy();
+    rerender(<LineChart ariaLabel="c" width={400} height={200} series={series([[1, 7], [2, 8], [3, 9], [4, 10]])} />);
+    expect(container.querySelector(".crosshair")).toBeNull();
+    expect(container.querySelector("[aria-live]")?.textContent).toBe("");
+  });
+
   it("follows the pointer without announcing it", () => {
     const { container, getByText } = render(curve);
     const svg = container.querySelector("svg") as SVGSVGElement;
