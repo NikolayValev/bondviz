@@ -27,8 +27,9 @@ formula is written up on the site.
   its lead time to the recession that followed (or "too early to tell"), and today's spread is
   shown as a z-score and percentile of its own history.
 - **Engineering:** TypeScript strict; the math and parsing live in pure `lib/` modules, each with
-  a Vitest suite beside it (323 web tests). CI runs tests, lint, typecheck, build and a
-  dependency-audit gate, plus the original Python reference's pytest suite.
+  a Vitest suite beside it (329 web tests). CI runs tests, lint, typecheck, build, a
+  dependency-audit gate and Playwright browser tests (every route at desktop and phone width
+  with axe-core checks), plus the original Python reference's pytest suite.
 - **No charting library:** D3 computes scales and paths, React renders the SVG, colors come from
   design tokens. Hover, touch or arrow-key any chart to read its values (announced to screen
   readers), curves use a √ maturity axis so the front end is legible, and the charts and data

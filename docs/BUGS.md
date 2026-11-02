@@ -238,6 +238,10 @@ An independent review of the PR #4 diff found these; all fixed except the last, 
 - **Accepted residual (dev-only):** `eslint-config-next → @next/eslint-plugin-next → fast-glob →
   micromatch → braces` (ReDoS in glob parsing). No patched `braces` exists and npm's only
   "fix" is a downgrade to `eslint-config-next@14`; it only parses this repo's own lint globs.
+  **Update 2026-11-02:** a high vite advisory (dev server, via Vitest) was fixed in range
+  (vite 8.3.5). The remaining dev-only report is a moderate `minimatch` ReDoS
+  (GHSA-g3hv-75wg-m249) under ESLint, whose only offered fix is a breaking ESLint downgrade; like
+  `braces`, it only ever sees this repo's own glob patterns.
 - **Gotcha:** npm 10's `npm audit fix` / `npm update` crash here (`Cannot read properties of null
   (reading 'edgesOut')`, an arborist peer-set bug). `npx npm@11 audit fix` works and writes the
   same lockfile v3 that npm 10's `npm ci` installs cleanly.

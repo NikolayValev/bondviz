@@ -178,7 +178,9 @@ Every page in this app was built the same way. Follow it and you'll match the co
 8. **Make it exportable.** Give each shared chart an `exportTitle` (it adds CSV / PNG buttons to
    the legend row) and put `<ExportButtons title csv={() => ({ columns, rows })} />` by each data
    table. Pass raw numbers (percent as percent, not decimals) and put units in the headers.
-9. **Verify.** `npm test` (Vitest), `npx eslint .`, `npm run build` — all must stay green.
+9. **Verify.** Add the route and its `<h1>` to `ROUTES` in `e2e/smoke.spec.ts` (and mock any new
+   API route in `e2e/mocks.ts`), then `npm test` (Vitest), `npx eslint .`, `npm run build` and
+   `npm run e2e` — all must stay green.
 
 There are full worked examples of this exact flow in `docs/superpowers/specs/*` (design) and
 `docs/superpowers/plans/*` (step-by-step). The two most recent (`carry-rolldown`,
@@ -233,14 +235,21 @@ There are full worked examples of this exact flow in `docs/superpowers/specs/*` 
 
 ## Testing & tooling
 
-- **Vitest** (`npm test`), jsdom env, Testing Library for components. 48 test files, 323 tests (2026-10-28).
+- **Vitest** (`npm test`), jsdom env, Testing Library for components. 49 test files, 329 tests (2026-11-02).
   Every `lib/*.ts` has a sibling `*.test.ts`; charts have render/smoke tests; API routes stub
   `fetch` with `vi.stubGlobal`.
 - **ESLint** via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`). Run with
   `npx eslint .` or `npm run lint` — **not** `next lint` (removed in Next 16).
 - **Build**: `npm run build` (Turbopack). TypeScript `strict` is on.
-- **CI**: `.github/workflows/ci.yml` runs on every push and PR. The web job runs `npm test`,
-  `npx eslint .`, `npx tsc --noEmit` and `npm run build`; the Python job runs `pytest`.
+- **Browser tests** (`npm run e2e`, Playwright, after `npm run build`). `e2e/smoke.spec.ts` loads
+  every route at desktop and phone width and fails on a console error or any axe-core WCAG 2.1 AA /
+  best-practice violation with all charts mounted; `e2e/interactions.spec.ts` covers ⌘K, shared
+  links, URL-backed inputs, keyboard chart readouts, CSV download, the Signal periods and the
+  Stocks comparison. `e2e/mocks.ts` answers every API route from `e2e/fixtures` (real Treasury
+  data), so tests never hit Treasury, Polygon or the LLM. Add a route to `ROUTES` when you add a page.
+- **CI**: `.github/workflows/ci.yml` runs on every push and PR. The web job runs the production
+  dependency audit, `npm test`, `npx eslint .`, `npx tsc --noEmit`, `npm run build` and the browser
+  tests (traces are uploaded on failure); the Python job runs `pytest`.
 
 ## Process conventions (how features get built here)
 
