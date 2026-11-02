@@ -12,5 +12,6 @@ context in few tokens:
   swap playbook. Read when touching look-and-feel or charts.
 - **../docs/BACKLOG.md** (`FEAT-*`) and **../docs/BUGS.md** (`BUG-*`) — the work queue.
 
-Quick checks (keep all green): `npm test` · `npx eslint .` · `npm run build`. Note: `next lint` is
+Quick checks (keep all green): `npm test` · `npx eslint .` · `npm run build` · `npm run e2e`
+(Playwright on the build; add new routes to `e2e/smoke.spec.ts`). Note: `next lint` is
 removed in Next 16 — use `npm run lint` / `npx eslint .`.

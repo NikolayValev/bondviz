@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   web:
-    name: Web (test · lint · typecheck · build)
+    name: Web (test · lint · typecheck · build · browser)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,6 +37,19 @@ jobs:
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+      # Browser tests on the production build: every route at desktop and phone width (renders,
+      # no console errors, no axe WCAG 2.1 AA violations) plus the key interactions. APIs are
+      # mocked from web/e2e/fixtures, so this never depends on Treasury or Polygon being up.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: web/test-results/
+          retention-days: 7
 
   python:
     name: Python reference (pytest)

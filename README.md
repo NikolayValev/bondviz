@@ -61,11 +61,12 @@ flowchart LR
   beside it. External I/O lives only in `app/api/*` routes, which cache and fail soft.
 - **No charting library.** D3 computes scales and paths, React owns the SVG, and colors come from
   design tokens shown on [`/styleguide`](https://bondviz.nikolayvalev.com/styleguide).
-- **CI** runs tests, ESLint, `tsc` and a production build for the web app, and `pytest` for the
-  Python reference, on every push.
+- **CI** runs unit tests, ESLint, `tsc`, a production build and **Playwright browser tests** for
+  the web app (every route at desktop and phone width with axe-core accessibility checks, plus the
+  key interactions), and `pytest` for the Python reference, on every push.
 - **Accessible and fast:** hover, touch or arrow-key any chart to read its values (announced to
   screen readers); zero axe-core (WCAG 2.1 AA) violations across every route at desktop and
-  mobile widths; Lighthouse accessibility, best practices and SEO are 100, and performance is
+  mobile widths, enforced by the browser tests in CI; Lighthouse accessibility, best practices and SEO are 100, and performance is
   95–99 on the tools with no layout shift (local production build, Lighthouse mobile defaults).
 - **Fully keyless by default.** Treasury data needs no API key. Polygon and GitHub Models keys are
   optional and only enable the Stocks and Command pages.
@@ -82,6 +83,7 @@ npm run dev        # http://localhost:3000
 npm test           # Vitest
 npx eslint .       # lint
 npm run build      # production build
+npm run e2e        # Playwright browser tests (after a build)
 ```
 
 Optional keys go in `web/.env.local` (git-ignored):
